@@ -114,7 +114,7 @@ class AndroidTargetInfo:
 
 
 def android_autodetect_cmake():
-    from distutils.version import StrictVersion
+    from distutils.version import LooseVersion
     from os import listdir
 
     sdk_cmake_basedir = path_join(ANDROID_SDK_ROOT, 'cmake')
@@ -123,7 +123,7 @@ def android_autodetect_cmake():
     for entry in listdir(sdk_cmake_basedir):
         if isdir(path_join(sdk_cmake_basedir, entry)):
             try:
-                version = StrictVersion(entry)
+                version = LooseVersion(entry)
                 versions += [version]
             except ValueError:
                 continue # Not a version folder
