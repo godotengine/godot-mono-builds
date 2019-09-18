@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
+import os
 from os import environ
 from os.path import exists as path_exists, join as path_join, isfile, isdir, abspath
 from sys import exit
 
 
 class MonoBuildError(Exception):
-    '''Generic exception for custom build errors'''
+    """Generic exception for custom build errors"""
     def __init__(self, msg):
         super(MonoBuildError, self).__init__(msg)
         self.message = msg
@@ -536,10 +537,10 @@ def main(raw_args):
         else:
             raise argparse.ArgumentTypeError('Boolean value expected.')
 
-    home = environ.get('HOME')
-    android_sdk_default = environ.get('ANDROID_HOME', environ.get('ANDROID_SDK_ROOT', path_join(home, 'Android/Sdk')))
-    android_ndk_default = environ.get('ANDROID_NDK_ROOT', path_join(android_sdk_default, 'ndk-bundle'))
-    mono_sources_default = environ.get('MONO_SOURCE_ROOT', '')
+    home = os.getenv('HOME', '')
+    android_sdk_default = os.getenv('ANDROID_HOME', os.getenv('ANDROID_SDK_ROOT', path_join(home, 'Android/Sdk')))
+    android_ndk_default = os.getenv('ANDROID_NDK_ROOT', path_join(android_sdk_default, 'ndk-bundle'))
+    mono_sources_default = os.getenv('MONO_SOURCE_ROOT', '')
 
     default_help = dedent('default: %(default)s')
 
