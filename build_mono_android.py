@@ -298,7 +298,7 @@ def setup_android_target_template(env, target):
         CXXCPP = path_join(tools_path, (name_fmt % 'clang++'))
         CXXCPP += ' -E'
 
-    ccache_path = environ.get('CCACHE', '')
+    ccache_path = os.getenv('CCACHE', '')
     if ccache_path:
         CC = '%s %s' % (ccache_path, CC)
         CXX = '%s %s' % (ccache_path, CXX)
