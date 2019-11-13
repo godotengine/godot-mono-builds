@@ -332,7 +332,7 @@ def setup_android_cross_template(env: dict, opts: AndroidOpts, target: str, host
     ]
 
     # Runtime cross template
-    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvm-llvm64', offsets_dumper_abi)
+    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvm64', offsets_dumper_abi)
 
 
 def setup_android_cross_mxe_template(env: dict, opts: AndroidOpts, target: str, host_arch: str):
@@ -399,7 +399,7 @@ def setup_android_cross_mxe_template(env: dict, opts: AndroidOpts, target: str, 
     env['_android-%s_CONFIGURE_FLAGS' % target] = CONFIGURE_FLAGS
 
     # Runtime cross template
-    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvm-llvmwin64', offsets_dumper_abi)
+    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvmwin64', offsets_dumper_abi)
 
 
 def make_standalone_toolchain(opts: AndroidOpts, target: str, api: str):
@@ -461,6 +461,7 @@ def make(opts: AndroidOpts, product: str, target: str):
     run_command('make', args=make_args, name='make')
     run_command('make', args=['-C', '%s/mono' % build_dir, 'install'], name='make install mono')
     run_command('make', args=['-C', '%s/support' % build_dir, 'install'], name='make install support')
+    run_command('make', args=['-C', '%s/data' % build_dir, 'install'], name='make install data')
 
     if opts.strip_libs and not is_cross(target):
         strip_libs(opts, product, target, env['ANDROID_API_VERSION'])

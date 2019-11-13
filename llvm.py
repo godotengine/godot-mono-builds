@@ -8,8 +8,11 @@ from options import *
 from os_utils import *
 
 
-target_values = ['llvm64', 'llvmwin64']
-mxe_targets = {'llvmwin64': {'arch': 'x86_64', 'mxe': 'mxe-Win64'}}
+target_values = ['llvm32', 'llvm64', 'llvmwin32', 'llvmwin64']
+mxe_targets = {
+    'llvmwin32': {'arch': 'i686', 'mxe': 'mxe-Win32'},
+    'llvmwin64': {'arch': 'x86_64', 'mxe': 'mxe-Win64'}
+}
 
 
 def make(opts: BaseOpts, target: str):
@@ -54,6 +57,9 @@ def make(opts: BaseOpts, target: str):
             search='@MXE_PATH@', replace=opts.mxe_prefix,
             dst_file='%s/external/llvm/cmake/modules/%s.cmake' % (opts.mono_source_root, mxe)
         )
+
+    if target in ['llvm32', 'llvmwin32']:
+        CMAKE_ARGS += ['-DLLVM_BUILD_32_BITS=On']
 
     CMAKE_ARGS += [os.environ.get('llvm-%s_CMAKE_ARGS' % target, '')]
 
@@ -108,9 +114,12 @@ def main(raw_args):
     opts = base_opts_from_args(args)
     targets = args.target
 
-    for target in targets:
-        action = { 'make': make, 'clean': clean }[args.action]
-        action(opts, target)
+    try:
+        for target in targets:
+            action = { 'make': make, 'clean': clean }[args.action]
+            action(opts, target)
+    except BuildError as e:
+        sys.exit(e.message)
 
 
 if __name__ == '__main__':

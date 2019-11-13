@@ -3,6 +3,7 @@
 
 import os
 import os.path
+import sys
 
 from os.path import join as path_join
 from options import *
@@ -141,9 +142,12 @@ def main(raw_args):
     opts = bcl_opts_from_args(args)
     products = args.product
 
-    for product in products:
-        action = actions[args.action]
-        action(opts, product)
+    try:
+        for product in products:
+            action = actions[args.action]
+            action(opts, product)
+    except BuildError as e:
+        sys.exit(e.message)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+import sys
+
 from os.path import join as path_join
 from options import *
 from os_utils import *
@@ -53,8 +55,11 @@ def main(raw_args):
 
     opts = base_opts_from_args(args)
 
-    action = actions[args.action]
-    action(opts)
+    try:
+        action = actions[args.action]
+        action(opts)
+    except BuildError as e:
+        sys.exit(e.message)
 
 
 if __name__ == '__main__':

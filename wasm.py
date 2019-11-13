@@ -137,6 +137,7 @@ def make(opts: RuntimeOpts, product: str, target: str):
     run_command('emmake', args=['make'] + make_args, env=make_env, name='make')
 
     run_command('make', args=['-C', '%s/mono' % build_dir, 'install'], name='make install mono')
+    run_command('make', args=['-C', '%s/data' % build_dir, 'install'], name='make install data')
 
     # Copy support headers
 

@@ -6,7 +6,7 @@ from options import RuntimeOpts
 from os_utils import *
 
 
-def setup_runtime_template(env: dict, opts: RuntimeOpts, product: str, target: str, host_triple: str):
+def setup_runtime_template(env: dict, opts: RuntimeOpts, product: str, target: str, host_triple: str, llvm: str=''):
     BITNESS = ''
     if any(s in host_triple for s in ['i686', 'i386']):
         BITNESS = '-m32'
@@ -83,6 +83,9 @@ def setup_runtime_template(env: dict, opts: RuntimeOpts, product: str, target: s
     CONFIGURE_FLAGS += env.get('_%s-%s_CONFIGURE_FLAGS' % (product, target), [])
     CONFIGURE_FLAGS += env.get('%s-%s_CONFIGURE_FLAGS' % (product, target), [])
 
+    if llvm:
+        CONFIGURE_FLAGS += ['--with-llvm=%s/llvm-%s' % (opts.install_dir, llvm)]
+
     env['_runtime_%s-%s_AC_VARS' % (product, target)] = AC_VARS
     env['_runtime_%s-%s_CONFIGURE_ENVIRONMENT' % (product, target)] = CONFIGURE_ENVIRONMENT
     env['_runtime_%s-%s_CONFIGURE_FLAGS' % (product, target)] = CONFIGURE_FLAGS
@@ -93,7 +96,7 @@ def setup_runtime_cross_template(env: dict, opts: RuntimeOpts, product: str, tar
     CONFIGURE_FLAGS = [
         '--target=%s' % target_triple,
         '--with-cross-offsets=%s.h' % target_triple,
-        '--with-llvm=%s/%s' % (opts.install_dir, llvm)
+        '--with-llvm=%s/llvm-%s' % (opts.install_dir, llvm)
     ]
 
     env['_cross-runtime_%s-%s_CONFIGURE_FLAGS' % (product, target)] = CONFIGURE_FLAGS

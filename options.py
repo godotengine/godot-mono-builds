@@ -32,6 +32,11 @@ class AndroidOpts(RuntimeOpts):
 
 
 @dataclass
+class DesktopOpts(RuntimeOpts):
+    with_llvm: bool
+
+
+@dataclass
 class BclOpts(BaseOpts):
     tests: bool
 
@@ -76,4 +81,11 @@ def bcl_opts_from_args(args):
     return BclOpts(
         **vars(base_opts_from_args(args)),
         tests = args.tests
+    )
+
+
+def desktop_opts_from_args(args):
+    return DesktopOpts(
+        **vars(runtime_opts_from_args(args)),
+        with_llvm = args.with_llvm
     )
