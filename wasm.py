@@ -144,22 +144,30 @@ def make(opts: RuntimeOpts, product: str, target: str):
     from shutil import copy
 
     headers = ['crc32.h', 'deflate.h', 'inffast.h', 'inffixed.h', 'inflate.h', 'inftrees.h', 'trees.h', 'zconf.h', 'zlib.h', 'zutil.h']
-    src_support_dir = '%s/support' % opts.mono_source_root
-    dst_support_dir = '%s/include/support' % install_dir
+    dst_zlib_dir = '%s/include/support' % install_dir
 
-    mkdir_p(dst_support_dir)
+    src_zlib_dir = None
+    src_zlib_dir_hints = ['%s/mono/zlib' % opts.mono_source_root, '%s/support' % opts.mono_source_root]
+
+    for src_zlib_dir_hint in src_zlib_dir_hints:
+        if os.path.isfile(path_join(src_zlib_dir_hint, 'zlib.h')):
+            src_zlib_dir = src_zlib_dir_hint
+            break
+
+    if src_zlib_dir is None:
+        raise BuildError('Cannot find the support zlib headers in the Mono source tree. Tried the following locations: ' + str(src_zlib_dir_hints))
+
+    mkdir_p(dst_zlib_dir)
 
     for header in headers:
-        copy(path_join(src_support_dir, header), dst_support_dir)
+        copy(path_join(src_zlib_dir, header), dst_zlib_dir)
 
     # Copy wasm src files
 
     wasm_src_files = [
         'driver.c',
-        'zlib-helper.c',
         'corebindings.c',
         'pinvoke-tables-default.h',
-        'pinvoke-tables-default-netcore.h',
         'library_mono.js',
         'binding_support.js',
         'dotnet_support.js'
@@ -169,8 +177,39 @@ def make(opts: RuntimeOpts, product: str, target: str):
 
     mkdir_p(dst_wasm_src_dir)
 
+    src_wasm_src_dir = None
+    src_wasm_src_dir_hints = ['%s/sdks/wasm/src' % opts.mono_source_root, '%s/sdks/wasm/support' % opts.mono_source_root, '%s/sdks/wasm' % opts.mono_source_root]
+
+    for src_wasm_src_dir_hint in src_wasm_src_dir_hints:
+        if os.path.isfile(path_join(src_wasm_src_dir_hint, 'driver.c')):
+            src_wasm_src_dir = src_wasm_src_dir_hint
+            break
+
+    if src_wasm_src_dir is None:
+        raise BuildError('Cannot find \'driver.c\' in the Mono source tree. Tried with the following locations: ' + str(src_wasm_src_dir_hints))
+
     for wasm_src_file in wasm_src_files:
-        copy(path_join(opts.mono_source_root, 'sdks/wasm/src', wasm_src_file), dst_wasm_src_dir)
+        copy(path_join(src_wasm_src_dir, wasm_src_file), dst_wasm_src_dir)
+
+    # Older versions didn't have .NET Core support
+    if os.path.isfile(path_join(src_wasm_src_dir, 'pinvoke-tables-default-netcore.h')):
+        copy(path_join(src_wasm_src_dir, 'pinvoke-tables-default-netcore.h'), dst_wasm_src_dir)
+
+    # Older versions had zlib-helper.c in different locations
+    zlib_helper_name = 'zlib-helper.c'
+    zlib_helper_dir = None
+
+    zlib_helper_dir_hints = src_wasm_src_dir_hints + ['%s/support' % opts.mono_source_root]
+
+    for zlib_helper_dir_hint in zlib_helper_dir_hints:
+        if os.path.isfile(path_join(zlib_helper_dir_hint, zlib_helper_name)):
+            zlib_helper_dir = zlib_helper_dir_hint
+            break
+
+    if zlib_helper_dir is None:
+        raise BuildError('Cannot find \'%s\' in the Mono source tree. Tried with the following locations: %s' % (zlib_helper_name, str(zlib_helper_dir_hints)))
+
+    copy(path_join(zlib_helper_dir, zlib_helper_name), dst_wasm_src_dir)
 
 
 def clean(opts: RuntimeOpts, product: str, target: str):
