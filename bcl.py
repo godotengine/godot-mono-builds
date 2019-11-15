@@ -3,6 +3,7 @@
 
 import os
 import os.path
+import runtime
 import sys
 
 from os.path import join as path_join
@@ -28,6 +29,9 @@ def configure_bcl(opts: BclOpts):
 
     if os.path.isfile(stamp_file):
         return
+
+    if not os.path.isfile(path_join(opts.mono_source_root, 'configure')):
+        runtime.run_autogen(opts)
 
     build_dir = path_join(opts.configure_dir, 'bcl')
     mkdir_p(build_dir)
