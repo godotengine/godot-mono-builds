@@ -21,7 +21,7 @@ def main(raw_args):
     args = parser.parse_args(raw_args)
 
     this_script_dir = os.path.dirname(os.path.realpath(__file__))
-    patches_dir = os.path.join(this_script_dir, 'patches')
+    patches_dir = os.path.join(this_script_dir, 'files', 'patches')
 
     mono_source_root = args.mono_sources
 

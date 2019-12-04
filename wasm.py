@@ -67,8 +67,8 @@ def setup_wasm_target_template(env: dict, opts: RuntimeOpts, target: str):
     CONFIGURE_FLAGS += [
         '--cache-file=%s/wasm-%s-%s.config.cache' % (opts.configure_dir, target, opts.configuration),
         '--prefix=%s/wasm-%s-%s' % (opts.install_dir, target, opts.configuration),
-        'CFLAGS=%s %s' % (' '.join(CFLAGS), env.get('wasm_%s_CFLAGS' % target, '')),
-        'CXXFLAGS=%s %s' % (' '.join(CXXFLAGS), env.get('$$(wasm_%s_CXXFLAGS' % target, ''))
+        'CFLAGS=%s %s' % (' '.join(CFLAGS), ' '.join(env.get('wasm_%s_CFLAGS' % target, ''))),
+        'CXXFLAGS=%s %s' % (' '.join(CXXFLAGS), ' '.join(env.get('wasm_%s_CXXFLAGS' % target, '')))
     ]
 
     CONFIGURE_FLAGS += env.get('wasm_%s_CONFIGURE_FLAGS' % target, [])
@@ -167,6 +167,7 @@ def make(opts: RuntimeOpts, product: str, target: str):
     wasm_src_files = [
         'driver.c',
         'corebindings.c',
+        'zlib-helper.c',
         'pinvoke-tables-default.h',
         'library_mono.js',
         'binding_support.js',
@@ -177,39 +178,25 @@ def make(opts: RuntimeOpts, product: str, target: str):
 
     mkdir_p(dst_wasm_src_dir)
 
-    src_wasm_src_dir = None
-    src_wasm_src_dir_hints = ['%s/sdks/wasm/src' % opts.mono_source_root, '%s/sdks/wasm/support' % opts.mono_source_root, '%s/sdks/wasm' % opts.mono_source_root]
+    src_dir_hints = [
+        '%s/sdks/wasm/src' % opts.mono_source_root,
+        '%s/sdks/wasm/support' % opts.mono_source_root,
+        '%s/sdks/wasm' % opts.mono_source_root
+    ]
 
-    for src_wasm_src_dir_hint in src_wasm_src_dir_hints:
-        if os.path.isfile(path_join(src_wasm_src_dir_hint, 'driver.c')):
-            src_wasm_src_dir = src_wasm_src_dir_hint
-            break
-
-    if src_wasm_src_dir is None:
-        raise BuildError('Cannot find \'driver.c\' in the Mono source tree. Tried with the following locations: ' + str(src_wasm_src_dir_hints))
+    def dir_with_file(dirs, file):
+        return (d for d in dirs if os.path.isfile(path_join(d, file)))
 
     for wasm_src_file in wasm_src_files:
-        copy(path_join(src_wasm_src_dir, wasm_src_file), dst_wasm_src_dir)
+        src_dir = next(dir_with_file(src_dir_hints, wasm_src_file), '')
+        if not src_dir:
+            raise BuildError('File \'%s\' not found. Probed locations: %s' % (wasm_src_file, str(src_dir_hints)))
+        copy(path_join(src_dir, wasm_src_file), dst_wasm_src_dir)
 
     # Older versions didn't have .NET Core support
-    if os.path.isfile(path_join(src_wasm_src_dir, 'pinvoke-tables-default-netcore.h')):
-        copy(path_join(src_wasm_src_dir, 'pinvoke-tables-default-netcore.h'), dst_wasm_src_dir)
-
-    # Older versions had zlib-helper.c in different locations
-    zlib_helper_name = 'zlib-helper.c'
-    zlib_helper_dir = None
-
-    zlib_helper_dir_hints = src_wasm_src_dir_hints + ['%s/support' % opts.mono_source_root]
-
-    for zlib_helper_dir_hint in zlib_helper_dir_hints:
-        if os.path.isfile(path_join(zlib_helper_dir_hint, zlib_helper_name)):
-            zlib_helper_dir = zlib_helper_dir_hint
-            break
-
-    if zlib_helper_dir is None:
-        raise BuildError('Cannot find \'%s\' in the Mono source tree. Tried with the following locations: %s' % (zlib_helper_name, str(zlib_helper_dir_hints)))
-
-    copy(path_join(zlib_helper_dir, zlib_helper_name), dst_wasm_src_dir)
+    src_dir = next(dir_with_file(src_dir_hints, 'pinvoke-tables-default-netcore.h'), '')
+    if src_dir:
+        copy(path_join(src_dir, 'pinvoke-tables-default-netcore.h'), dst_wasm_src_dir)
 
 
 def clean(opts: RuntimeOpts, product: str, target: str):

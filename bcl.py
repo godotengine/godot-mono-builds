@@ -115,6 +115,23 @@ def make_product(opts: BclOpts, product: str):
     for profile in profiles:
         [rm_rf(x) for x in glob.iglob(hidden_file_pattern, recursive=True)]
 
+    if product == 'android':
+        this_script_dir = os.path.dirname(os.path.realpath(__file__))
+        monodroid_profile_dir = '%s/%s' % (install_dir, 'monodroid')
+        godot_profile_dir = '%s/%s' % (install_dir, 'godot_android_ext')
+        refs = ['mscorlib.dll', 'System.Core.dll', 'System.dll']
+
+        mkdir_p(godot_profile_dir)
+
+        android_env_csc_args = [
+            path_join(this_script_dir, 'files', 'godot-AndroidEnvironment.cs'),
+            '-target:library', '-out:%s' % path_join(godot_profile_dir, 'Mono.Android.dll'),
+            '-nostdlib', '-noconfig', '-langversion:latest'
+        ]
+        android_env_csc_args += ['-r:%s' % path_join(monodroid_profile_dir, r) for r in refs]
+
+        run_command('csc', android_env_csc_args)
+
 
 def clean_product(opts: BclOpts, product: str):
     clean_bcl(opts)
