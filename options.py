@@ -39,6 +39,7 @@ class DesktopOpts(RuntimeOpts):
 @dataclass
 class BclOpts(BaseOpts):
     tests: bool
+    remove_pdb: bool
 
 
 # Need to make paths absolute as we change cwd
@@ -80,7 +81,8 @@ def android_opts_from_args(args):
 def bcl_opts_from_args(args):
     return BclOpts(
         **vars(base_opts_from_args(args)),
-        tests = args.tests
+        tests = args.tests,
+        remove_pdb = args.remove_pdb
     )
 
 

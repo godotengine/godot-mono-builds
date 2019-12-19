@@ -109,12 +109,18 @@ def make_product(opts: BclOpts, product: str):
     for profile in profiles:
         copy_tree('%s/mcs/class/lib/%s' % (opts.mono_source_root, profile), '%s/%s' % (install_dir, profile))
 
-    # Recursively remove hidden files we shoudln't have copied (e.g.: .stamp)
+    # Remove unneeded files
     import glob
-    hidden_file_pattern = '%s/**/.*' % install_dir
+    file_patterns = []
+    file_patterns += ['.*'] # Recursively remove hidden files we shoudln't have copied (e.g.: .stamp)
+    file_patterns += ['*.dll.so', '*.exe.so'] # Remove pre-built AOT modules. We don't need them and they take a lot of space.
+    file_patterns += ['*.pdb'] if opts.remove_pdb else []
     for profile in profiles:
-        [rm_rf(x) for x in glob.iglob(hidden_file_pattern, recursive=True)]
+        for file_pattern in file_patterns:
+            file_pattern_recursive = '%s/**/%s' % (install_dir, file_pattern)
+            [rm_rf(x) for x in glob.iglob(file_pattern_recursive, recursive=True)]
 
+    # godot_android_ext profile (custom 'Mono.Android.dll')
     if product == 'android':
         this_script_dir = os.path.dirname(os.path.realpath(__file__))
         monodroid_profile_dir = '%s/%s' % (install_dir, 'monodroid')
@@ -142,6 +148,7 @@ def clean_product(opts: BclOpts, product: str):
 
 def main(raw_args):
     import cmd_utils
+    from cmd_utils import custom_bool
 
     actions = {
         'make': make_product,
@@ -155,6 +162,7 @@ def main(raw_args):
     parser.add_argument('action', choices=actions.keys())
     parser.add_argument('--product', choices=product_values, action='append', required=True)
     parser.add_argument('--tests', action='store_true', default=False, help=default_help)
+    parser.add_argument('--remove-pdb', type=custom_bool, default=True, help=default_help)
 
     cmd_utils.add_base_arguments(parser, default_help)
 
