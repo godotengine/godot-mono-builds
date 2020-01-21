@@ -26,7 +26,8 @@ def main(raw_args):
     mono_source_root = args.mono_sources
 
     patches = [
-        'fix-mono-android-tkill.diff'
+        'fix-mono-android-tkill.diff',
+        'mono-dbg-agent-clear-tls-instead-of-abort.diff'
     ]
 
     from subprocess import Popen
