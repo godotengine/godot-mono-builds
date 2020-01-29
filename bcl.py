@@ -11,14 +11,16 @@ from options import *
 from os_utils import *
 
 
-product_values = ['desktop', 'android', 'wasm']
+product_values = ['desktop', 'desktop-win32', 'android', 'wasm']
 profiles_table = {
     'desktop': ['net_4_x'],
+    'desktop-win32': ['net_4_x'],
     'android': ['monodroid', 'monodroid_tools'],
     'wasm': ['wasm', 'wasm_tools']
 }
 test_profiles_table = {
     'desktop': [],
+    'desktop-win32': [],
     'android': ['monodroid', 'monodroid_tools'],
     'wasm': ['wasm']
 }
@@ -97,6 +99,10 @@ def make_product(opts: BclOpts, product: str):
 
     make_args = ['-C', build_dir, '-C', 'runtime', 'all-mcs', 'build_profiles=%s' % ' '.join(profiles)]
     make_args += ['V=1'] if opts.verbose_make else []
+
+    if product == 'desktop-win32':
+        make_args += ['PROFILE_PLATFORM=win32'] # Requires patch: 'bcl-profile-platform-override.diff'
+
     run_command('make', args=make_args, name='make profiles')
 
     if opts.tests and len(test_profiles) > 0:
@@ -107,7 +113,8 @@ def make_product(opts: BclOpts, product: str):
     # Copy the bcl profiles to the output directory
     from distutils.dir_util import copy_tree
     for profile in profiles:
-        copy_tree('%s/mcs/class/lib/%s' % (opts.mono_source_root, profile), '%s/%s' % (install_dir, profile))
+        profile_dir = profile + '-win32' if product == 'desktop-win32' else profile
+        copy_tree('%s/mcs/class/lib/%s' % (opts.mono_source_root, profile_dir), '%s/%s' % (install_dir, profile_dir))
 
     # Remove unneeded files
     import glob

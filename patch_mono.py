@@ -27,7 +27,8 @@ def main(raw_args):
 
     patches = [
         'fix-mono-android-tkill.diff',
-        'mono-dbg-agent-clear-tls-instead-of-abort.diff'
+        'mono-dbg-agent-clear-tls-instead-of-abort.diff',
+        'bcl-profile-platform-override.diff'
     ]
 
     from subprocess import Popen

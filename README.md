@@ -87,6 +87,9 @@ _AOT cross-compilers for WebAssembly cannot be built with this script yet._
 # Build the Desktop BCL.
 ./bcl.py make --product=desktop
 
+# Build the Desktop BCL for Windows.
+./bcl.py make --product=desktop-win32
+
 # Build the Android BCL.
 ./bcl.py make --product=android
 
