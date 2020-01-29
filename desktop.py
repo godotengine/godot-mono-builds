@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import os
 import os.path
@@ -12,8 +11,6 @@ import runtime
 
 
 # TODO: mono cross-compilers
-
-target_platforms = ['linux', 'windows', 'osx']
 
 targets = {
     'linux': ['i686', 'x86_64'],
@@ -190,7 +187,7 @@ def clean(opts: DesktopOpts, product: str, target_platform: str, target: str):
     )
 
 
-def main(raw_args):
+def run_main(raw_args, target_platform):
     import cmd_utils
     from collections import OrderedDict
     from typing import Callable
@@ -201,22 +198,18 @@ def main(raw_args):
     actions['clean'] = clean
 
     parser = cmd_utils.build_arg_parser(description='Builds the Mono runtime for the Desktop')
-    subparsers = parser.add_subparsers(dest='platform')
 
     default_help = 'default: %(default)s'
 
-    for target_platform in target_platforms:
-        target_platform_subparser = subparsers.add_parser(target_platform)
-        target_platform_subparser.add_argument('action', choices=['configure', 'make', 'clean'])
-        target_platform_subparser.add_argument('--target', choices=targets[target_platform], action='append', required=True)
-        target_platform_subparser.add_argument('--with-llvm', action='store_true', default=False, help=default_help)
+    parser.add_argument('action', choices=['configure', 'make', 'clean'])
+    parser.add_argument('--target', choices=targets[target_platform], action='append', required=True)
+    parser.add_argument('--with-llvm', action='store_true', default=False, help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
 
     args = parser.parse_args(raw_args)
 
     input_action = args.action
-    input_target_platform = args.platform
     input_targets = args.target
 
     opts = desktop_opts_from_args(args)
@@ -225,21 +218,16 @@ def main(raw_args):
         print('Mono sources directory not found: ' + opts.mono_source_root)
         sys.exit(1)
 
-    if input_target_platform == 'osx' and sys.platform != 'darwin' and not 'OSXCROSS_ROOT' in os.environ:
+    if target_platform == 'osx' and sys.platform != 'darwin' and not 'OSXCROSS_ROOT' in os.environ:
         raise RuntimeError('The \'OSXCROSS_ROOT\' environment variable is required for cross-compiling to macOS')
 
-    if is_cross_compiling(input_target_platform) and sys.platform == 'darwin':
+    if is_cross_compiling(target_platform) and sys.platform == 'darwin':
         raise RuntimeError('Cross-compiling from macOS is not supported')
 
     action = actions[input_action]
 
     try:
         for target in input_targets:
-            action(opts, 'desktop-%s' % input_target_platform, input_target_platform, target)
+            action(opts, 'desktop-%s' % target_platform, target_platform, target)
     except BuildError as e:
         sys.exit(e.message)
-
-
-if __name__ == '__main__':
-    from sys import argv
-    main(argv[1:])

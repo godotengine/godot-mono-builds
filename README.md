@@ -29,19 +29,19 @@ export MONO_SOURCE_ROOT=$HOME/git/mono
 
 ```bash
 # Build the runtimes for 32-bit and 64-bit Linux.
-./desktop.py linux configure --target=i686 --target=x86_64
-./desktop.py linux make --target=i686 --target=x86_64
+./linux.py configure --target=i686 --target=x86_64
+./linux.py make --target=i686 --target=x86_64
 
 # Build the runtimes for 32-bit and 64-bit Windows.
-./desktop.py windows configure --target=i686 --target=x86_64 --mxe-prefix=/usr
-./desktop.py windows make --target=i686 --target=x86_64 --mxe-prefix=/usr
+./windows.py configure --target=i686 --target=x86_64 --mxe-prefix=/usr
+./windows.py make --target=i686 --target=x86_64 --mxe-prefix=/usr
 
 # Build the runtime for 64-bit macOS.
-./desktop.py osx configure --target=x86_64
-./desktop.py osx make --target=x86_64
+./osx.py configure --target=x86_64
+./osx.py make --target=x86_64
 ```
 
-_AOT cross-compilers for desktop platforms cannot be built with this script yet._
+_AOT cross-compilers for desktop platforms cannot be built with these scripts yet._
 
 ## Android
 
