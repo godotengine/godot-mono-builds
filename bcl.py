@@ -62,7 +62,7 @@ def make_bcl(opts: BclOpts):
 
     build_dir = path_join(opts.configure_dir, 'bcl')
 
-    make_args = ['-C', build_dir, '-C', 'mono']
+    make_args = ['-j', opts.jobs, '-C', build_dir, '-C', 'mono']
     make_args += ['V=1'] if opts.verbose_make else []
 
     run_command('make', args=make_args, name='make bcl')

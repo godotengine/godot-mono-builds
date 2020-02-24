@@ -64,6 +64,7 @@ def make(opts: BaseOpts, target: str):
     CMAKE_ARGS += [os.environ.get('llvm-%s_CMAKE_ARGS' % target, '')]
 
     make_args = [
+        '-j', opts.jobs,
 	    '-C', '%s/llvm' % opts.mono_source_root,
         '-f', 'build.mk', 'install-llvm',
 		'LLVM_BUILD=%s' % build_dir,

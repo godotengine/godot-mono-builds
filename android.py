@@ -455,7 +455,7 @@ def make(opts: AndroidOpts, product: str, target: str):
 
     build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
 
-    make_args = ['-C', build_dir]
+    make_args = ['-j', opts.jobs, '-C', build_dir]
     make_args += ['V=1'] if opts.verbose_make else []
 
     run_command('make', args=make_args, name='make')
