@@ -6,6 +6,7 @@ from os.path import abspath
 @dataclass
 class BaseOpts:
     verbose_make: bool
+    jobs: str
     configure_dir: str
     install_dir: str
     mono_source_root: str
@@ -49,6 +50,7 @@ def base_opts_from_args(args):
     from os.path import abspath
     return BaseOpts(
         verbose_make = args.verbose_make,
+        jobs = args.jobs,
         configure_dir = abspath(args.configure_dir),
         install_dir = abspath(args.install_dir),
         mono_source_root = abspath(args.mono_sources),
