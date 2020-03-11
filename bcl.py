@@ -11,17 +11,19 @@ from options import *
 from os_utils import *
 
 
-product_values = ['desktop', 'desktop-win32', 'android', 'wasm']
+product_values = ['desktop', 'desktop-win32', 'android', 'ios', 'wasm']
 profiles_table = {
     'desktop': ['net_4_x'],
     'desktop-win32': ['net_4_x'],
     'android': ['monodroid', 'monodroid_tools'],
+    'ios': ['monotouch', 'monotouch_runtime', 'monotouch_tools'],
     'wasm': ['wasm', 'wasm_tools']
 }
 test_profiles_table = {
     'desktop': [],
     'desktop-win32': [],
     'android': ['monodroid', 'monodroid_tools'],
+    'ios': ['monotouch'],
     'wasm': ['wasm']
 }
 
@@ -93,9 +95,6 @@ def make_product(opts: BclOpts, product: str):
     install_dir = path_join(opts.install_dir, '%s-bcl' % product)
 
     mkdir_p(install_dir)
-
-    for profile in profiles:
-        mkdir_p('%s/%s' % (install_dir, profile))
 
     make_args = ['-C', build_dir, '-C', 'runtime', 'all-mcs', 'build_profiles=%s' % ' '.join(profiles)]
     make_args += ['V=1'] if opts.verbose_make else []

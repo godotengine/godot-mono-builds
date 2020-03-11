@@ -7,6 +7,8 @@ This repository contains scripts for building the Mono runtime to use with Godot
 
 These scripts are based on the Mono [sdks](https://github.com/mono/mono/tree/master/sdks) makefiles, with some changes to work well with Godot. Some platforms or targets depend on files from the `sdks` directory in the Mono source repository. This directory may be missing from tarballs. If that's the case, cloning the git repository may be needed. [This table](https://www.mono-project.com/docs/about-mono/versioning/#mono-source-versioning) can be used to determine the branch for a specific version of Mono.
 
+Some patches need to be applied to the Mono sources before building. This can be done by running `python ./patch_mono.py`.
+
 Run `python SCRIPT.py --help` for the full list of command line options.
 
 By default, the scripts will install the resulting files to `$HOME/mono-installs`.
@@ -22,7 +24,7 @@ export MONO_SOURCE_ROOT=$HOME/git/mono
 
 ### Notes
 - Python 3.7 or higher is required.
-- Cross-compiling for macOS via osxcross is not yet supported.
+- OSXCROSS is supported expect for building the Mono cross-compilers.
 - Building on Windows is not supported. It's possible to use Cygwin or WSL (Windows Subsystem for Linux) but this hasn't been tested.
 
 ## Desktop
@@ -45,8 +47,6 @@ _AOT cross-compilers for desktop platforms cannot be built with these scripts ye
 
 ## Android
 
-Some patches may need to be applied to the Mono sources before building for Android. This can be done by running `./patch_mono.py`.
-
 ```bash
 # These are the default values. This step can be omitted if SDK and NDK root are in this location.
 export ANDROID_SDK_ROOT=$HOME/Android/Sdk
@@ -66,6 +66,26 @@ export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle
 ```
 
 The option `--target=all-runtime` is a shortcut for `--target=armeabi-v7a --target=x86 --target=arm64-v8a --target=x86_64`. The equivalent applies for `all-cross` and `all-cross-win`.
+
+# iOS
+
+```bash
+# Build the runtime for the iPhone simulator.
+./ios.py configure --target=x86_64
+./ios.py make --target=x86_64
+
+# Build the runtime for the iPhone device.
+./ios.py configure --target=arm64
+./ios.py make --target=arm64
+
+# Build the AOT cross-compiler targeting the iPhone device.
+./ios.py configure --target=cross-arm64
+./ios.py make --target=cross-arm64
+```
+
+The runtime can also be built an OSXCROSS iOS toolchain. The `--ios-toolchain` and `--ios-sdk` options
+are the equivalent of the Godot SCons options `IPHONEPATH` and `IPHONESDK` respectively.
+The cross compiler cannot be built with OSXCROSS yet.
 
 ## WebAssembly
 
@@ -92,6 +112,9 @@ _AOT cross-compilers for WebAssembly cannot be built with this script yet._
 
 # Build the Android BCL.
 ./bcl.py make --product=android
+
+# Build the iOS BCL.
+./bcl.py make --product=ios
 
 # Build the WebAssembly BCL.
 ./bcl.py make --product=wasm

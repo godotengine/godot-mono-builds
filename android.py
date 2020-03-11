@@ -173,11 +173,16 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     # permission denied. Therefore we just override 'MONO_RELOC_LIBDIR' here to avoid the relocation.
     CPPFLAGS += ['-DMONO_RELOC_LIBDIR=\\\".\\\"']
 
-    CFLAGS += ['-fstack-protector']
-    CFLAGS += ['-DMONODROID=1'] if opts.with_monodroid else []
+    CFLAGS += [
+        '-fstack-protector',
+        '-DMONODROID=1'
+    ]
     CFLAGS += ['-D__ANDROID_API__=' + api] if android_new_ndk else []
-    CXXFLAGS += ['-fstack-protector']
-    CXXFLAGS += ['-DMONODROID=1'] if opts.with_monodroid else []
+
+    CXXFLAGS += [
+        '-fstack-protector',
+        '-DMONODROID=1'
+    ]
     CXXFLAGS += ['-D__ANDROID_API__=' + api] if android_new_ndk else []
 
     CPPFLAGS += ['-I%s/sysroot/usr/include' % toolchain_path]
@@ -210,7 +215,7 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
         '--with-btls-android-api=%s' % api,
     ]
 
-    CONFIGURE_FLAGS += ['--enable-monodroid'] if opts.with_monodroid else []
+    CONFIGURE_FLAGS += ['--enable-monodroid']
     CONFIGURE_FLAGS += ['--with-btls-android-ndk-asm-workaround'] if android_new_ndk else []
 
     CONFIGURE_FLAGS += [
@@ -282,7 +287,7 @@ def get_android_libclang_path(opts):
 def setup_android_cross_template(env: dict, opts: AndroidOpts, target: str, host_arch: str):
     def get_host_triple():
         if sys.platform == 'darwin':
-            return '%s-apple-darwin10' % host_arch
+            return '%s-apple-darwin11' % host_arch
         elif sys.platform in ['linux', 'linux2']:
             return '%s-linux-gnu' % host_arch
         assert False
@@ -319,7 +324,7 @@ def setup_android_cross_template(env: dict, opts: AndroidOpts, target: str, host
 
     CXXFLAGS = []
     CXXFLAGS += ['-DDEBUG_CROSS'] if not opts.release else []
-    CXXFLAGS += ['-mmacosx-version-min=10.9 -stdlib=libc++'] if is_darwin else []
+    CXXFLAGS += ['-mmacosx-version-min=10.9', '-stdlib=libc++'] if is_darwin else []
 
     env['_android-%s_CXXFLAGS' % target] = CXXFLAGS
 
@@ -469,7 +474,6 @@ def make(opts: AndroidOpts, product: str, target: str):
 
 def clean(opts: AndroidOpts, product: str, target: str):
     rm_rf(
-        path_join(opts.configure_dir, 'toolchains', '%s-%s' % (product, target)),
         path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration)),
         path_join(opts.configure_dir, '%s-%s-%s.config.cache' % (product, target, opts.configuration)),
         path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
@@ -517,7 +521,6 @@ def main(raw_args):
     parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
     parser.add_argument('--android-api-version', default='18', help=default_help)
     parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
-    parser.add_argument('--with-monodroid', type=custom_bool, default=True, help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
 
