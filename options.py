@@ -26,10 +26,18 @@ class AndroidOpts(RuntimeOpts):
     android_toolchains_prefix: str
     android_sdk_root: str
     android_ndk_root: str
-    with_monodroid: bool
     android_api_version: str
     android_cmake_version: str
     toolchain_name_fmt: str = '%s-api%s-clang'
+
+
+@dataclass
+class iOSOpts(RuntimeOpts):
+    ios_toolchain_path: str
+    ios_sdk_path: str
+    ios_version_min: str
+    osx_toolchain_path: str
+    osx_sdk_path: str
 
 
 @dataclass
@@ -74,9 +82,19 @@ def android_opts_from_args(args):
         android_toolchains_prefix = abspath(args.toolchains_prefix),
         android_sdk_root = abspath(args.android_sdk),
         android_ndk_root = abspath(args.android_ndk),
-        with_monodroid = args.with_monodroid,
         android_api_version = args.android_api_version,
         android_cmake_version = args.android_cmake_version
+    )
+
+
+def ios_opts_from_args(args):
+    return iOSOpts(
+        **vars(runtime_opts_from_args(args)),
+        ios_toolchain_path = abspath(args.ios_toolchain),
+        ios_sdk_path = abspath(args.ios_sdk) if args.ios_sdk else '',
+        ios_version_min = args.ios_version_min,
+        osx_toolchain_path = abspath(args.osx_toolchain),
+        osx_sdk_path = abspath(args.osx_sdk) if args.ios_sdk else ''
     )
 
 

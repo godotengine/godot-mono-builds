@@ -8,6 +8,9 @@ from options import *
 from os_utils import *
 
 
+# TODO: OSXCROSS
+
+
 target_values = ['llvm32', 'llvm64', 'llvmwin32', 'llvmwin64']
 mxe_targets = {
     'llvmwin32': {'arch': 'i686', 'mxe': 'mxe-Win32'},
@@ -73,6 +76,15 @@ def make(opts: BaseOpts, target: str):
     ]
 
     make_args += ['V=1'] if opts.verbose_make else []
+
+    # IMPORTANT: We must specify the jobs count for this Makefile.
+    # The Makefile itself runs Make as well with the '-j' option, which tells it to spawn as many jobs as possible.
+    # This can result in errors like 'posix_spawn failed: Resource temporarily unavailable' on macOS due to the process limit.
+    # The job count seems to be inherited from the parent Make process, so that fixes the issue.
+    make_args += ['-j', opts.jobs]
+
+    if not find_executable('cmake') and not 'CMAKE' in os.environ:
+        print('WARNING: Cannot find CMake. Required by the llvm Makefile.')
 
     run_command('make', args=make_args, name='make')
 

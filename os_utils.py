@@ -32,13 +32,17 @@ def run_command(command, args=[], cwd=None, env=None, name='command'):
         raise BuildError('\'%s\' exited with error code: %s' % (name, e.returncode))
 
 
+print_env_sh_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'print_env.sh')
+
+
 def source(script: str, cwd=None) -> dict:
     popen_args = {}
     if cwd is not None:
         popen_args['cwd'] = cwd
 
     import subprocess
-    proc = subprocess.Popen('bash -c \'source %s; env -0\'' % script, stdout=subprocess.PIPE, shell=True, **popen_args)
+    cmd = 'bash -c \'source %s; bash %s\'' % (script, print_env_sh_path)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, **popen_args)
     output = proc.communicate()[0]
     return dict(line.split('=', 1) for line in output.decode().split('\x00') if line)
 
@@ -135,3 +139,12 @@ def globs(pathnames, dirpath='.'):
     for pathname in pathnames:
         files.extend(glob.glob(os.path.join(dirpath, pathname)))
     return files
+
+
+def xcrun_find_sdk(sdk_name):
+    import subprocess
+    xcrun_output = subprocess.check_output(['xcrun', '--sdk', sdk_name, '--show-sdk-path']).decode().strip()
+    if xcrun_output.startswith('xcrun: error: SDK "%s" cannot be located' % sdk_name):
+        return ''
+    sdk_path = xcrun_output
+    return sdk_path

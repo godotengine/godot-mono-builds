@@ -44,14 +44,10 @@ def is_cross_compiling(target_platform: str) -> bool:
             (sys.platform in ['linux', 'linux2', 'cygwin'] and target_platform != 'linux')
 
 
-def get_osxcross_sdk(target, osxcross_bin):
-    osxcross_sdk = os.environ.get('OSXCROSS_SDK', 14)
+def get_osxcross_sdk(osxcross_bin, arch):
+    osxcross_sdk = os.environ.get('OSXCROSS_SDK', 18)
 
-    name_fmt = path_join(osxcross_bin, target + '-apple-darwin%s-%s')
-
-    if not 'OSXCROSS_SDK' in os.environ and not os.path.isfile(name_fmt % (osxcross_sdk, 'ar')):
-        # Default 14 wasn't it, try 15
-        osxcross_sdk = 15
+    name_fmt = path_join(osxcross_bin, arch + '-apple-darwin%s-%s')
 
     if not os.path.isfile(name_fmt % (osxcross_sdk, 'ar')):
         raise BuildError('Specify a valid osxcross SDK with the environment variable \'OSXCROSS_SDK\'')
@@ -64,15 +60,23 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
 
     CONFIGURE_FLAGS = [
         '--disable-boehm',
-        '--disable-iconv',
         '--disable-mcs-build',
-        '--disable-nls',
-        '--enable-dynamic-btls',
         '--enable-maintainer-mode',
-        '--with-sigaltstack=yes',
         '--with-tls=pthread',
         '--without-ikvm-native'
     ]
+
+    if target_platform == 'windows':
+        CONFIGURE_FLAGS += [
+            '--with-libgdiplus=%s' % opts.mxe_prefix
+        ]
+    else:
+        CONFIGURE_FLAGS += [
+            '--disable-iconv',
+            '--disable-nls',
+            '--enable-dynamic-btls',
+            '--with-sigaltstack=yes',
+        ]
 
     if target_platform == 'windows':
         mxe_bin = path_join(opts.mxe_prefix, 'bin')
@@ -92,27 +96,28 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
         env['_%s-%s_STRIP' % (product, target)] = name_fmt % 'strip'
 
         CONFIGURE_FLAGS += [
-            '--enable-static-gcc-libs'
+            #'--enable-static-gcc-libs'
         ]
-    elif target_platform == 'osx' and 'OSXCROSS_ROOT' in os.environ:
-        osxcross_root = os.environ['OSXCROSS_ROOT']
-        osxcross_bin = path_join(osxcross_root, 'target', 'bin')
-        osxcross_sdk = get_osxcross_sdk(target, osxcross_bin)
+    elif target_platform == 'osx':
+        if is_cross_compiling(target_platform):
+            osxcross_root = os.environ['OSXCROSS_ROOT']
+            osxcross_bin = path_join(osxcross_root, 'target', 'bin')
+            osxcross_sdk = get_osxcross_sdk(osxcross_bin, arch=target)
 
-        env['_%s-%s_PATH' % (product, target)] = osxcross_bin
+            env['_%s-%s_PATH' % (product, target)] = osxcross_bin
 
-        name_fmt = path_join(osxcross_bin, target + ('-apple-darwin%s-' % osxcross_sdk) + '%s')
+            name_fmt = path_join(osxcross_bin, target + ('-apple-darwin%s-' % osxcross_sdk) + '%s')
 
-        env['_%s-%s_AR' % (product, target)] = name_fmt % 'ar'
-        env['_%s-%s_AS' % (product, target)] = name_fmt % 'as'
-        env['_%s-%s_CC' % (product, target)] = name_fmt % 'cc'
-        env['_%s-%s_CXX' % (product, target)] = name_fmt % 'c++'
-        env['_%s-%s_LD' % (product, target)] = name_fmt % 'ld'
-        env['_%s-%s_RANLIB' % (product, target)] = name_fmt % 'ranlib'
-        env['_%s-%s_CMAKE' % (product, target)] = name_fmt % 'cmake'
-        env['_%s-%s_STRIP' % (product, target)] = name_fmt % 'strip'
-    else:
-        env['_%s-%s_CC' % (product, target)] = 'cc'
+            env['_%s-%s_AR' % (product, target)] = name_fmt % 'ar'
+            env['_%s-%s_AS' % (product, target)] = name_fmt % 'as'
+            env['_%s-%s_CC' % (product, target)] = name_fmt % 'clang'
+            env['_%s-%s_CXX' % (product, target)] = name_fmt % 'clang++'
+            env['_%s-%s_LD' % (product, target)] = name_fmt % 'ld'
+            env['_%s-%s_RANLIB' % (product, target)] = name_fmt % 'ranlib'
+            env['_%s-%s_CMAKE' % (product, target)] = name_fmt % 'cmake'
+            env['_%s-%s_STRIP' % (product, target)] = name_fmt % 'strip'
+        else:
+            env['_%s-%s_CC' % (product, target)] = 'cc'
 
     env['_%s-%s_CONFIGURE_FLAGS' % (product, target)] = CONFIGURE_FLAGS
 
@@ -122,19 +127,14 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
 
 
 def strip_libs(opts: DesktopOpts, product: str, target_platform: str, target: str):
-    if is_cross_compiling(target_platform):
-        if target_platform == 'windows':
-            mxe_bin = path_join(opts.mxe_prefix, 'bin')
-            name_fmt = path_join(mxe_bin, target + '-w64-mingw32-%s')
-            strip = name_fmt % 'strip'
-        elif target_platform == 'osx':
-            assert 'OSXCROSS_ROOT' in os.environ
-            osxcross_root = os.environ['OSXCROSS_ROOT']
-            osxcross_bin = path_join(osxcross_bin, 'target', 'bin')
-            osxcross_sdk = get_osxcross_sdk(target, osxcross_bin)
+    if target_platform == 'osx':
+        # 'strip' doesn't support '--strip-unneeded' on macOS
+        return
 
-            name_fmt = path_join(osxcross_bin, target + ('-apple-darwin%s-' % osxcross_sdk) + '%s')
-            strip = name_fmt % 'strip'
+    if is_cross_compiling(target_platform) and target_platform == 'windows':
+        mxe_bin = path_join(opts.mxe_prefix, 'bin')
+        name_fmt = path_join(mxe_bin, target + '-w64-mingw32-%s')
+        strip = name_fmt % 'strip'
     else:
         strip = 'strip'
 
