@@ -256,6 +256,10 @@ def setup_ios_simulator_template(env: dict, opts: iOSOpts, target: str):
         '--disable-crash-reporting'
     ]
 
+    if sys.platform != 'darwin':
+        # DTrace is not available when building with OSXCROSS
+        CONFIGURE_FLAGS += ['--enable-dtrace=no']
+
     env['_ios-%s_AR' % target] = AR
     env['_ios-%s_AS' % target] = AS
     env['_ios-%s_CC' % target] = CC

@@ -116,6 +116,9 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
             env['_%s-%s_RANLIB' % (product, target)] = name_fmt % 'ranlib'
             env['_%s-%s_CMAKE' % (product, target)] = name_fmt % 'cmake'
             env['_%s-%s_STRIP' % (product, target)] = name_fmt % 'strip'
+
+            # DTrace is not available when building with OSXCROSS
+            CONFIGURE_FLAGS += ['--enable-dtrace=no']
         else:
             env['_%s-%s_CC' % (product, target)] = 'cc'
 
