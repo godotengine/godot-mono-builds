@@ -170,8 +170,8 @@ def configure(opts: DesktopOpts, product: str, target_platform: str, target: str
 def make(opts: DesktopOpts, product: str, target_platform: str, target: str):
     build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
 
-    make_args = ['-j', opts.jobs, '-C', build_dir]
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir]
 
     run_command('make', args=make_args, name='make')
     run_command('make', args=['-C', '%s/mono' % build_dir, 'install'], name='make install mono')

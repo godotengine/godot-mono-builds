@@ -13,8 +13,9 @@ def build(opts: BaseOpts):
 
     mkdir_p(install_dir)
 
-    make_args = ['-C', build_dir, 'build-reference-assemblies']
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir, 'build-reference-assemblies']
+
     run_command('make', args=make_args, name='make build-reference-assemblies')
 
 
@@ -24,8 +25,9 @@ def install(opts: BaseOpts):
 
     mkdir_p(install_dir)
 
-    make_args = ['-C', build_dir, 'install-local', 'DESTDIR=%s' % install_dir, 'prefix=/']
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir, 'install-local', 'DESTDIR=%s' % install_dir, 'prefix=/']
+
     run_command('make', args=make_args, name='make install-local')
 
 

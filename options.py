@@ -111,3 +111,9 @@ def desktop_opts_from_args(args):
         **vars(runtime_opts_from_args(args)),
         with_llvm = args.with_llvm
     )
+
+
+def make_default_args(opts: BaseOpts):
+    make_args = ['-j%s' % opts.jobs]
+    make_args += ['V=1'] if opts.verbose_make else []
+    return make_args
