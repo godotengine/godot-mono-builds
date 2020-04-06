@@ -28,8 +28,14 @@ def main(raw_args):
     ]
 
     from subprocess import Popen
+    from sys import exit
     for patch in patches:
-        proc = Popen('bash -c \'patch -N -p1 < %s; exit 0\'' % patch, cwd=emsdk_root, shell=True)
+        patch_cmd = 'patch -N -p1 < %s' % patch
+        print('Running: %s' % patch_cmd)
+        proc = Popen('bash -c \'%s; exit $?\'' % patch_cmd, cwd=emsdk_root, shell=True)
+        exit_code = proc.wait()
+        if exit_code != 0:
+            exit('patch exited with error code: %s' % exit_code)
 
 
 if __name__ == '__main__':
