@@ -44,7 +44,9 @@ def add_base_arguments(parser, default_help):
     mono_sources_default = os.environ.get('MONO_SOURCE_ROOT', '')
 
     parser.add_argument('--verbose-make', action='store_true', default=False, help=default_help)
-    parser.add_argument('--jobs', default='1', help=default_help)
+    # --jobs supports not passing an argument, in which case the 'const' is used,
+    # which is the number of CPU cores on the host system.
+    parser.add_argument('--jobs', '-j', nargs='?', const=str(os.cpu_count()), default='1', help=default_help)
     parser.add_argument('--configure-dir', default=path_join(home, 'mono-configs'), help=default_help)
     parser.add_argument('--install-dir', default=path_join(home, 'mono-installs'), help=default_help)
 

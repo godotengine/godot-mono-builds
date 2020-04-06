@@ -64,8 +64,8 @@ def make_bcl(opts: BclOpts):
 
     build_dir = path_join(opts.configure_dir, 'bcl')
 
-    make_args = ['-j', opts.jobs, '-C', build_dir, '-C', 'mono']
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir, '-C', 'mono']
 
     run_command('make', args=make_args, name='make bcl')
 
@@ -96,8 +96,8 @@ def make_product(opts: BclOpts, product: str):
 
     mkdir_p(install_dir)
 
-    make_args = ['-C', build_dir, '-C', 'runtime', 'all-mcs', 'build_profiles=%s' % ' '.join(profiles)]
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir, '-C', 'runtime', 'all-mcs', 'build_profiles=%s' % ' '.join(profiles)]
 
     if product == 'desktop-win32':
         make_args += ['PROFILE_PLATFORM=win32'] # Requires patch: 'bcl-profile-platform-override.diff'
@@ -105,8 +105,9 @@ def make_product(opts: BclOpts, product: str):
     run_command('make', args=make_args, name='make profiles')
 
     if opts.tests and len(test_profiles) > 0:
-        test_make_args = ['-C', build_dir, '-C', 'runtime', 'test', 'xunit-test', 'test_profiles=%s' % ' '.join(test_profiles)]
-        test_make_args += ['V=1'] if opts.verbose_make else []
+        test_make_args = make_default_args(opts)
+        test_make_args += ['-C', build_dir, '-C', 'runtime', 'test', 'xunit-test', 'test_profiles=%s' % ' '.join(test_profiles)]
+
         run_command('make', args=test_make_args, name='make tests')
 
     # Copy the bcl profiles to the output directory

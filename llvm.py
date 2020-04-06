@@ -66,22 +66,19 @@ def make(opts: BaseOpts, target: str):
 
     CMAKE_ARGS += [os.environ.get('llvm-%s_CMAKE_ARGS' % target, '')]
 
-    make_args = [
-        '-j', opts.jobs,
-	    '-C', '%s/llvm' % opts.mono_source_root,
-        '-f', 'build.mk', 'install-llvm',
-		'LLVM_BUILD=%s' % build_dir,
-		'LLVM_PREFIX=%s' % install_dir,
-		'LLVM_CMAKE_ARGS=%s' % ' '.join([a for a in CMAKE_ARGS if a])
-    ]
-
-    make_args += ['V=1'] if opts.verbose_make else []
-
     # IMPORTANT: We must specify the jobs count for this Makefile.
     # The Makefile itself runs Make as well with the '-j' option, which tells it to spawn as many jobs as possible.
     # This can result in errors like 'posix_spawn failed: Resource temporarily unavailable' on macOS due to the process limit.
     # The job count seems to be inherited from the parent Make process, so that fixes the issue.
-    make_args += ['-j', opts.jobs]
+    # Note: This is handle automatically in make_default_args.
+    make_args = make_default_args(opts)
+    make_args += [
+        '-C', '%s/llvm' % opts.mono_source_root,
+        '-f', 'build.mk', 'install-llvm',
+        'LLVM_BUILD=%s' % build_dir,
+        'LLVM_PREFIX=%s' % install_dir,
+        'LLVM_CMAKE_ARGS=%s' % ' '.join([a for a in CMAKE_ARGS if a])
+    ]
 
     if not find_executable('cmake') and not 'CMAKE' in os.environ:
         print('WARNING: Cannot find CMake. Required by the llvm Makefile.')
@@ -98,14 +95,13 @@ def clean(opts: BaseOpts, target: str):
 
     rm_rf(stamp_file)
 
-    make_args = [
-	    '-C', '%s/llvm' % opts.mono_source_root,
+    make_args = make_default_args(opts)
+    make_args += [
+        '-C', '%s/llvm' % opts.mono_source_root,
         '-f', 'build.mk', 'clean-llvm',
-		'LLVM_BUILD=%s' % build_dir,
-		'LLVM_PREFIX=%s' % install_dir
+        'LLVM_BUILD=%s' % build_dir,
+        'LLVM_PREFIX=%s' % install_dir
     ]
-
-    make_args += ['V=1'] if opts.verbose_make else []
 
     run_command('make', args=make_args, name='make clean')
 

@@ -128,8 +128,8 @@ def make(opts: RuntimeOpts, product: str, target: str):
     build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
     install_dir = path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
 
-    make_args = ['-j', opts.jobs, '-C', build_dir]
-    make_args += ['V=1'] if opts.verbose_make else []
+    make_args = make_default_args(opts)
+    make_args += ['-C', build_dir]
 
     make_env = os.environ.copy()
     make_env['PATH'] = emsdk_root + ':' + make_env['PATH']
