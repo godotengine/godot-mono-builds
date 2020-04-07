@@ -38,6 +38,7 @@ class iOSOpts(RuntimeOpts):
     ios_version_min: str
     osx_toolchain_path: str
     osx_sdk_path: str
+    osx_triple_abi: str
 
 
 @dataclass
@@ -94,7 +95,8 @@ def ios_opts_from_args(args):
         ios_sdk_path = abspath(args.ios_sdk) if args.ios_sdk else '',
         ios_version_min = args.ios_version_min,
         osx_toolchain_path = abspath(args.osx_toolchain),
-        osx_sdk_path = abspath(args.osx_sdk) if args.ios_sdk else ''
+        osx_sdk_path = abspath(args.osx_sdk) if args.ios_sdk else '',
+        osx_triple_abi = args.osx_triple_abi
     )
 
 
