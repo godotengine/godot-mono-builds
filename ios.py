@@ -64,7 +64,9 @@ def setup_ios_device_template(env: dict, opts: iOSOpts, target: str):
     tools_path = path_join(opts.ios_toolchain_path, 'usr', 'bin')
 
     if sys.platform != 'darwin':
+        wrapper_path = create_osxcross_wrapper(opts, 'ios', target, opts.ios_toolchain_path)
         name_fmt = path_join(tools_path, osxcross_tool_triple + '-%s')
+        name_fmt = "%s %s" % (wrapper_path, name_fmt)
     else:
         name_fmt = path_join(tools_path, '%s')
 
@@ -190,7 +192,9 @@ def setup_ios_simulator_template(env: dict, opts: iOSOpts, target: str):
     tools_path = path_join(opts.ios_toolchain_path, 'usr', 'bin')
 
     if sys.platform != 'darwin':
+        wrapper_path = create_osxcross_wrapper(opts, 'ios', target, opts.ios_toolchain_path)
         name_fmt = path_join(tools_path, osxcross_tool_triple + '-%s')
+        name_fmt = "%s %s" % (wrapper_path, name_fmt)
     else:
         name_fmt = path_join(tools_path, '%s')
 
@@ -297,17 +301,6 @@ class iOSCrossTable:
     }
 
 
-def get_osxcross_sdk(osxcross_bin, arch):
-    osxcross_sdk = os.environ.get('OSXCROSS_SDK', 18)
-
-    name_fmt = path_join(osxcross_bin, arch + '-apple-darwin%s-%s')
-
-    if not os.path.isfile(name_fmt % (osxcross_sdk, 'ar')):
-        raise BuildError('Specify a valid osxcross SDK with the environment variable \'OSXCROSS_SDK\'')
-
-    return osxcross_sdk
-
-
 def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: str):
     target_triple = iOSCrossTable.target_triples[target]
     device_target = iOSCrossTable.device_targets[target]
@@ -335,16 +328,14 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
         raise RuntimeError('Cannot find MacOSX SDK; specify one manually with \'--osx-sdk\'.')
 
     if sys.platform != 'darwin':
-        if not 'OSXCROSS_ROOT' in os.environ:
-            raise RuntimeError('The \'OSXCROSS_ROOT\' environment variable is required for cross-compiling to macOS')
-
-        osxcross_root = os.environ['OSXCROSS_ROOT']
-        osxcross_bin = path_join(osxcross_root, 'target', 'bin')
-        osxcross_sdk = get_osxcross_sdk(osxcross_bin, arch=host_arch)
+        osxcross_root = opts.osx_toolchain_path
+        osxcross_bin = path_join(osxcross_root, 'bin')
 
         env['_ios-%s_PATH' % target] = osxcross_bin
 
-        name_fmt = path_join(osxcross_bin, target + ('-apple-darwin%s-' % osxcross_sdk) + '%s')
+        wrapper_path = create_osxcross_wrapper(opts, 'ios', target, opts.osx_toolchain_path)
+        name_fmt = path_join(osxcross_bin, target + '-apple-' + opts.osx_triple_abi + '-%s')
+        name_fmt = "%s %s" % (wrapper_path, name_fmt)
     else:
         tools_path = path_join(opts.osx_toolchain_path, 'usr', 'bin')
         name_fmt = path_join(tools_path, '%s')
@@ -482,6 +473,7 @@ def main(raw_args):
     parser.add_argument('--ios-version-min', default=default_ios_version_min, help=default_help)
     parser.add_argument('--osx-toolchain', default=default_osx_toolchain, help=default_help)
     parser.add_argument('--osx-sdk', default='', help=default_help)
+    parser.add_argument('--osx-triple-abi', default='darwin18', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
 

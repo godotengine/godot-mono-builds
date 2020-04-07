@@ -1,6 +1,7 @@
 
 import os
 import os.path
+from options import *
 
 
 class BuildError(Exception):
@@ -148,3 +149,36 @@ def xcrun_find_sdk(sdk_name):
         return ''
     sdk_path = xcrun_output
     return sdk_path
+
+
+def chmod_plus_x(file):
+    import os
+    import stat
+    umask = os.umask(0)
+    os.umask(umask)
+    st = os.stat(file)
+    os.chmod(file, st.st_mode | ((stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) & ~umask))
+
+
+def create_osxcross_wrapper(opts: RuntimeOpts, product: str, target: str, toolchain_path : str):
+    # OSXCROSS toolchain executables use rpath to locate the toolchain's shared libraries.
+    # However, when moving the toolchain without care, the rpaths can be broken.
+    # Since fixing the rpaths can be tedious, we use this wrapper to override LD_LIBRARY_PATH.
+    # The reason we don't just run configure and make with LD_LIBRARY_PATH is because
+    # we want the resulting configuration to be independent from out python scripts.
+
+    wrapper_src = """#!/bin/bash
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:%s" $1 "$@"
+""" % os.path.join(toolchain_path, 'lib')
+
+    build_dir = os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    wrapper_path = os.path.join(build_dir, 'osxcross_cmd_wrapper.sh')
+
+    mkdir_p(build_dir)
+
+    with open(wrapper_path, 'w') as f:
+        f.write(wrapper_src)
+
+    chmod_plus_x(wrapper_path)
+
+    return wrapper_path

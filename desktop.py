@@ -101,12 +101,15 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
     elif target_platform == 'osx':
         if is_cross_compiling(target_platform):
             osxcross_root = os.environ['OSXCROSS_ROOT']
-            osxcross_bin = path_join(osxcross_root, 'target', 'bin')
-            osxcross_sdk = get_osxcross_sdk(osxcross_bin, arch=target)
+            osx_toolchain_path = path_join(osxcross_root, 'target')
+            osxcross_bin = path_join(osx_toolchain_path, 'bin')
+            osx_triple_abi = 'darwin%s' % get_osxcross_sdk(osxcross_bin, arch=target) # TODO: Replace with '--osx-triple-abi' as in ios.py
 
             env['_%s-%s_PATH' % (product, target)] = osxcross_bin
 
-            name_fmt = path_join(osxcross_bin, target + ('-apple-darwin%s-' % osxcross_sdk) + '%s')
+            wrapper_path = create_osxcross_wrapper(opts, product, target, osx_toolchain_path)
+            name_fmt = path_join(osxcross_bin, target + '-apple-' + osx_triple_abi + '-%s')
+            name_fmt = "%s %s" % (wrapper_path, name_fmt)
 
             env['_%s-%s_AR' % (product, target)] = name_fmt % 'ar'
             env['_%s-%s_AS' % (product, target)] = name_fmt % 'as'
