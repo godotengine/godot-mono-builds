@@ -168,7 +168,11 @@ def create_osxcross_wrapper(opts: RuntimeOpts, product: str, target: str, toolch
     # we want the resulting configuration to be independent from out python scripts.
 
     wrapper_src = """#!/bin/bash
-LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:%s" $1 "$@"
+OSXCROSS_COMMAND=$1;
+shift;
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:%s";
+${OSXCROSS_COMMAND} "$@";
+exit $?;
 """ % os.path.join(toolchain_path, 'lib')
 
     build_dir = os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
