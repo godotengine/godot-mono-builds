@@ -32,6 +32,11 @@ def main(raw_args):
         'mono_ios_asl_log_deprecated.diff'
     ]
 
+    if os.path.isfile(os.path.join(mono_source_root, 'mono/tools/offsets-tool/offsets-tool.py')):
+        patches += ['offsets-tool-extra-cflags_new.diff']
+    else:
+        patches += ['offsets-tool-extra-cflags_old.diff']
+
     from subprocess import Popen
     from sys import exit
     for patch in patches:

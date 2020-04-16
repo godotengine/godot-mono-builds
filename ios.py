@@ -302,6 +302,7 @@ class iOSCrossTable:
 
 
 def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: str):
+
     target_triple = iOSCrossTable.target_triples[target]
     device_target = iOSCrossTable.device_targets[target]
     offsets_dumper_abi = iOSCrossTable.offsets_dumper_abis[target]
@@ -334,7 +335,7 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
         env['_ios-%s_PATH' % target] = osxcross_bin
 
         wrapper_path = create_osxcross_wrapper(opts, 'ios', target, opts.osx_toolchain_path)
-        name_fmt = path_join(osxcross_bin, target + '-apple-' + opts.osx_triple_abi + '-%s')
+        name_fmt = path_join(osxcross_bin, host_arch + '-apple-' + opts.osx_triple_abi + '-%s')
         name_fmt = "%s %s" % (wrapper_path, name_fmt)
     else:
         tools_path = path_join(opts.osx_toolchain_path, 'usr', 'bin')
@@ -348,12 +349,33 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
     env['_ios-%s_RANLIB' % target] = name_fmt % 'ranlib'
     env['_ios-%s_STRIP' % target] = name_fmt % 'strip'
 
-    libclang = path_join(opts.ios_toolchain_path, 'usr', 'lib', 'libclang.dylib') if sys.platform == 'darwin' else os.environ['LIBCLANG_PATH']
+    libclang = os.environ.get('LIBCLANG_PATH', '')
+    if libclang and not os.path.isfile(libclang):
+        raise RuntimeError('Specified libclang file not found: \'%s\'' % libclang)
 
-    env['_ios-%s_OFFSETS_DUMPER_ARGS' % target] = [
+    if not libclang:
+        libclang = try_find_libclang(toolchain_path=opts.ios_toolchain_path)
+
+    if not libclang:
+        raise RuntimeError('Cannot find libclang shared library; specify a path manually with the \'LIBCLANG_PATH\' environment variable.')
+
+    offsets_dumper_args = [
         '--libclang=%s' % libclang,
         '--sysroot=%s' % ios_sysroot_path
     ]
+
+    if sys.platform != 'darwin':
+        # Needed in order to locate the iOS toolchain's clang to use with offsets-tool
+        setup_ios_device_template(env, opts, device_target)
+        ios_clang = env['_ios-%s_CC' % device_target]
+
+        # Extra CFLAGS needed in order to make offsets-tool work with OSXCross.
+        offsets_dumper_args += ['--extra-cflag=' + cflag for cflag in [
+            '-target', 'aarch64-apple-darwin',
+            '-resource-dir', get_clang_resource_dir(ios_clang)
+        ]]
+
+    env['_ios-%s_OFFSETS_DUMPER_ARGS' % target] = offsets_dumper_args
 
     AC_VARS = ['ac_cv_func_shm_open_working_with_mmap=no']
 

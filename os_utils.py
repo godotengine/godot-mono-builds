@@ -72,8 +72,8 @@ ENV_PATH_SEP = ';' if os.name == 'nt' else ':'
 
 def find_executable(name) -> str:
     is_windows = os.name == 'nt'
-    windows_exts = ENV_PATH_SEP.split(os.environ['PATHEXT']) if is_windows else None
-    path_dirs = ENV_PATH_SEP.split(os.environ['PATH'])
+    windows_exts = os.environ['PATHEXT'].split(ENV_PATH_SEP) if is_windows else None
+    path_dirs = os.environ['PATH'].split(ENV_PATH_SEP)
 
     search_dirs = path_dirs + [os.getcwd()] # cwd is last in the list
 
@@ -158,6 +158,44 @@ def chmod_plus_x(file):
     os.umask(umask)
     st = os.stat(file)
     os.chmod(file, st.st_mode | ((stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH) & ~umask))
+
+
+def get_clang_resource_dir(clang_command):
+    import shlex
+    from subprocess import check_output
+    return check_output(shlex.split(clang_command) + ['-print-resource-dir']).strip().decode('utf-8')
+
+
+def try_find_libclang(toolchain_path: str = '', llvm_config=''):
+    import sys
+    from subprocess import check_output
+
+    hint_paths = []
+
+    if toolchain_path:
+        libclang = os.path.join(toolchain_path, 'usr', 'lib', 'libclang.dylib')
+        if os.path.isfile(libclang):
+            print('Found libclang at: \'%s\'' % libclang)
+            return libclang
+
+    if not llvm_config:
+        llvm_config = find_executable('llvm-config')
+        if not llvm_config:
+            print('WARNING: llvm-config not found')
+            return ''
+    elif not os.path.isfile(llvm_config):
+        raise RuntimeError('Specified llvm-config file not found: \'%s\'' % llvm_config)
+
+    llvm_libdir = check_output([llvm_config, '--libdir']).strip().decode('utf-8')
+    if llvm_libdir:
+        libsuffix = '.dylib' if sys.platform == 'darwin' else '.so'
+        hints = ['libclang', 'clang']
+        libclang = next((p for p in [os.path.join(llvm_libdir, h + libsuffix) for h in hints] if os.path.isfile(p)), '')
+        if libclang:
+            print('Found libclang at: \'%s\'' % libclang)
+        return libclang
+
+    return ''
 
 
 def create_osxcross_wrapper(opts: RuntimeOpts, product: str, target: str, toolchain_path : str):

@@ -101,21 +101,28 @@ def setup_runtime_cross_template(env: dict, opts: RuntimeOpts, product: str, tar
 
     env['_cross-runtime_%s-%s_CONFIGURE_FLAGS' % (product, target)] = CONFIGURE_FLAGS
 
-    # Setup offsets-tool-py
-    run_command('make', ['-C', '%s/tools/offsets-tool-py' % opts.mono_source_root, 'setup'], name='make offsets-tool-py')
+    new_offsets_tool_path = '%s/mono/tools/offsets-tool/offsets-tool.py' % opts.mono_source_root
+    old_offsets_tool_path = '%s/tools/offsets-tool-py/offsets-tool.py' % opts.mono_source_root
 
-    # Run offsets-tool in its virtual env
+    old_offsets_tool = not os.path.isfile(new_offsets_tool_path)
 
-    virtualenv_vars = source('%s/tools/offsets-tool-py/offtool/bin/activate' % opts.mono_source_root)
+    offsets_tool_env = None
 
-    offsets_tool_env = os.environ.copy()
-    offsets_tool_env.update(virtualenv_vars)
+    if old_offsets_tool:
+        # Setup old offsets-tool-py if present (new location doesn't require setup)
+        run_command('make', ['-C', '%s/tools/offsets-tool-py' % opts.mono_source_root, 'setup'], name='make offsets-tool-py')
+
+        # Run offsets-tool in its virtual env
+        virtualenv_vars = source('%s/tools/offsets-tool-py/offtool/bin/activate' % opts.mono_source_root)
+
+        offsets_tool_env = os.environ.copy()
+        offsets_tool_env.update(virtualenv_vars)
 
     build_dir = '%s/%s-%s-%s' % (opts.configure_dir, product, target, opts.configuration)
     mkdir_p(build_dir)
 
     run_command('python3', [
-            '%s/tools/offsets-tool-py/offsets-tool.py' % opts.mono_source_root,
+            old_offsets_tool_path if old_offsets_tool else new_offsets_tool_path,
             '--targetdir=%s/%s-%s-%s' % (opts.configure_dir, product, device_target, opts.configuration),
             '--abi=%s' % offsets_dumper_abi,
             '--monodir=%s' % opts.mono_source_root,
