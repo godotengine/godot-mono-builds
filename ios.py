@@ -121,8 +121,13 @@ def setup_ios_device_template(env: dict, opts: iOSOpts, target: str):
     	'-DSMALL_CONFIG', '-D_XOPEN_SOURCE', '-DHOST_IOS', '-DHAVE_LARGE_FILE_SUPPORT=1'
     ]
 
-    LDFLAGS = [
-    	'-Wl,-no_weak_imports',
+    LDFLAGS = []
+
+    # https://github.com/mono/mono/issues/19393
+    if os.environ.get('DISABLE_NO_WEAK_IMPORTS', '0') != '1':
+        LDFLAGS += ['-Wl,-no_weak_imports']
+
+    LDFLAGS += [
     	'-arch %s' % arch,
     	'-framework', 'CoreFoundation',
     	'-lobjc', '-lc++'

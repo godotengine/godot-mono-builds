@@ -31,12 +31,12 @@ export MONO_SOURCE_ROOT=$HOME/git/mono
 
 ```bash
 # Build the runtimes for 32-bit and 64-bit Linux.
-./linux.py configure --target=i686 --target=x86_64
-./linux.py make --target=i686 --target=x86_64
+./linux.py configure --target=x86 --target=x86_64
+./linux.py make --target=x86 --target=x86_64
 
 # Build the runtimes for 32-bit and 64-bit Windows.
-./windows.py configure --target=i686 --target=x86_64 --mxe-prefix=/usr
-./windows.py make --target=i686 --target=x86_64 --mxe-prefix=/usr
+./windows.py configure --target=x86 --target=x86_64 --mxe-prefix=/usr
+./windows.py make --target=x86 --target=x86_64 --mxe-prefix=/usr
 
 # Build the runtime for 64-bit macOS.
 ./osx.py configure --target=x86_64

@@ -13,9 +13,23 @@ import runtime
 # TODO: mono cross-compilers
 
 targets = {
-    'linux': ['i686', 'x86_64'],
-    'windows': ['i686', 'x86_64'],
+    'linux': ['x86', 'x86_64'],
+    'windows': ['x86', 'x86_64'],
     'osx': ['x86_64']
+}
+
+target_arch = {
+    'linux': {
+        'x86': 'i686',
+        'x86_64': 'x86_64'
+    },
+    'windows': {
+        'x86': 'i686',
+        'x86_64': 'x86_64'
+    },
+    'osx': {
+        'x86_64': 'x86_64'
+    }
 }
 
 host_triples = {
@@ -26,11 +40,11 @@ host_triples = {
 
 llvm_table = {
     'linux': {
-        'i686': 'llvm32',
+        'x86': 'llvm32',
         'x86_64': 'llvm64'
     },
     'windows': {
-        'i686': 'llvm32',
+        'x86': 'llvm32',
         'x86_64': 'llvm64'
     },
     'osx': {
@@ -56,7 +70,7 @@ def get_osxcross_sdk(osxcross_bin, arch):
 
 
 def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_platform: str, target: str):
-    host_triple = host_triples[target_platform] % target
+    host_triple = host_triples[target_platform] % target_arch[target_platform][target]
 
     CONFIGURE_FLAGS = [
         '--disable-boehm',
@@ -83,7 +97,7 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
 
         env['_%s-%s_PATH' % (product, target)] = mxe_bin
 
-        name_fmt = path_join(mxe_bin, target + '-w64-mingw32-%s')
+        name_fmt = path_join(mxe_bin, target_arch[target_platform][target] + '-w64-mingw32-%s')
 
         env['_%s-%s_AR' % (product, target)] = name_fmt % 'ar'
         env['_%s-%s_AS' % (product, target)] = name_fmt % 'as'
@@ -103,12 +117,12 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
             osxcross_root = os.environ['OSXCROSS_ROOT']
             osx_toolchain_path = path_join(osxcross_root, 'target')
             osxcross_bin = path_join(osx_toolchain_path, 'bin')
-            osx_triple_abi = 'darwin%s' % get_osxcross_sdk(osxcross_bin, arch=target) # TODO: Replace with '--osx-triple-abi' as in ios.py
+            osx_triple_abi = 'darwin%s' % get_osxcross_sdk(osxcross_bin, arch=target_arch[target_platform][target]) # TODO: Replace with '--osx-triple-abi' as in ios.py
 
             env['_%s-%s_PATH' % (product, target)] = osxcross_bin
 
             wrapper_path = create_osxcross_wrapper(opts, product, target, osx_toolchain_path)
-            name_fmt = path_join(osxcross_bin, target + '-apple-' + osx_triple_abi + '-%s')
+            name_fmt = path_join(osxcross_bin, target_arch[target_platform][target] + '-apple-' + osx_triple_abi + '-%s')
             name_fmt = "%s %s" % (wrapper_path, name_fmt)
 
             env['_%s-%s_AR' % (product, target)] = name_fmt % 'ar'
@@ -139,7 +153,7 @@ def strip_libs(opts: DesktopOpts, product: str, target_platform: str, target: st
 
     if is_cross_compiling(target_platform) and target_platform == 'windows':
         mxe_bin = path_join(opts.mxe_prefix, 'bin')
-        name_fmt = path_join(mxe_bin, target + '-w64-mingw32-%s')
+        name_fmt = path_join(mxe_bin, target_arch[target_platform][target] + '-w64-mingw32-%s')
         strip = name_fmt % 'strip'
     else:
         strip = 'strip'

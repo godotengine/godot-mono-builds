@@ -1,0 +1,22 @@
+diff --git a/tools/offsets-tool-py/offsets-tool.py b/tools/offsets-tool-py/offsets-tool.py
+index 536206aa5c9..04e515f13f2 100644
+--- a/tools/offsets-tool-py/offsets-tool.py
++++ b/tools/offsets-tool-py/offsets-tool.py
+@@ -61,6 +61,7 @@ class OffsetsTool:
+ 		parser.add_argument ('--targetdir', dest='target_path', help='path to mono tree configured for target', required=True)
+ 		parser.add_argument ('--abi=', dest='abi', help='ABI triple to generate', required=True)
+ 		parser.add_argument ('--sysroot=', dest='sysroot', help='path to sysroot headers of target')
++		parser.add_argument ('--extra-cflag=', dest='extra_cflags', action='append', help='extra flags for clang')
+ 		args = parser.parse_args ()
+
+ 		if not args.libclang or not os.path.isfile (args.libclang):
+@@ -78,6 +79,9 @@ class OffsetsTool:
+ 		self.target_args = []
+ 		android_api_level = "-D__ANDROID_API=21"
+
++		if args.extra_cflags:
++ 			self.target_args += args.extra_cflags
++
+ 		if "wasm" in args.abi:
+ 			require_emscipten_path (args)
+ 			self.sys_includes = [args.emscripten_path + "/system/include/libc"]

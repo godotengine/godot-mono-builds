@@ -280,6 +280,9 @@ def get_android_libclang_path(opts):
     if sys.platform == 'darwin':
         return '%s/toolchains/llvm/prebuilt/darwin-x86_64/lib64/libclang.dylib' % opts.android_ndk_root
     elif sys.platform in ['linux', 'linux2']:
+        loc = '%s/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.9svn' % opts.android_ndk_root
+        if os.path.isfile(loc):
+            return loc
         return '%s/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.8svn' % opts.android_ndk_root
     assert False
 
@@ -519,7 +522,7 @@ def main(raw_args):
     parser.add_argument('--toolchains-prefix', default=path_join(home, 'android-toolchains'), help=default_help)
     parser.add_argument('--android-sdk', default=android_sdk_default, help=default_help)
     parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
-    parser.add_argument('--android-api-version', default='18', help=default_help)
+    parser.add_argument('--android-api-version', default='21', help=default_help)
     parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)

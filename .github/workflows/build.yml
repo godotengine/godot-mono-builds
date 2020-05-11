@@ -1,0 +1,829 @@
+name: Build
+
+on: [push, pull_request]
+
+env:
+  # Use SHA instead of the branch for caching purposes
+  MONO_BRANCH: 2019-10
+  MONO_SHA: 1d0d939dc30a5b56f478bc9f097cab146276b9af
+  PYTHON_VERSION: 3.8
+  EMSDK_VERSION: 1.38.47-upstream
+  ANDROID_PLATFORM: android-29
+  ANDROID_CMAKE_VERSION: 3.6.4111459
+  ANDROID_API: 21
+  IOS_VERSION_MIN: 10.0
+
+# NOTE: Underscore and brackets to workaround issue in nektos/act': https://github.com/nektos/act/issues/104
+
+jobs:
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86, x86_64]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies (x86)
+        if: matrix.target == 'x86'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install gcc-multilib g++-multilib zlib1g-dev:i386
+      - name: Install Dependencies (x86_64)
+        if: matrix.target == 'x86_64'
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run:
+          python3 godot-mono-builds/linux.py configure --target=${{ matrix.target }} -j 2
+      - name: Make
+        run:
+          python3 godot-mono-builds/linux.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/linux-${{ matrix.target }}.zip desktop-linux-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/linux-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: linux-${{ matrix.target }}-config.log
+          path: ~/mono-configs/desktop-linux-${{ matrix.target }}-release/config.log
+
+  windows:
+    name: Windows
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86, x86_64]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies (x86)
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install mingw-w64
+      - name: Install Dependencies (x86_64)
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run:
+          python3 godot-mono-builds/windows.py configure --target=${{ matrix.target }} -j 2
+      - name: Make
+        run:
+          python3 godot-mono-builds/windows.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/windows-${{ matrix.target }}.zip desktop-windows-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/windows-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-${{ matrix.target }}-config.log
+          path: ~/mono-configs/desktop-windows-${{ matrix.target }}-release/config.log
+
+  osx:
+    name: macOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [x86_64]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          brew install autoconf automake libtool pkg-config cmake python3
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run:
+          python3 godot-mono-builds/osx.py configure --target=${{ matrix.target }} -j 2
+      - name: Make
+        run:
+          python3 godot-mono-builds/osx.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/osx-${{ matrix.target }}.zip desktop-osx-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: osx-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/osx-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: osx-${{ matrix.target }}-config.log
+          path: ~/mono-configs/desktop-osx-${{ matrix.target }}-release/config.log
+
+  ios:
+    name: iOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [arm64, x86_64]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          brew install autoconf automake libtool pkg-config cmake python3
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run: |
+          export DISABLE_NO_WEAK_IMPORTS=1
+          python3 godot-mono-builds/ios.py configure --target=${{ matrix.target }} -j 2 --ios-version-min=${IOS_VERSION_MIN}
+      - name: Make
+        run:
+          python3 godot-mono-builds/ios.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}-config.log
+          path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
+
+  ios-cross:
+    needs: llvm
+    name: iOS Cross-compiler
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: [cross-arm64]
+        include:
+          - target: cross-arm64
+            llvm: llvm64
+            runtime_target: arm64
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          brew install autoconf automake libtool pkg-config cmake python3
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Download LLVM artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: llvm-${{ matrix.llvm }}-macos-latest
+          # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
+          # File permissions are also messed up: https://github.com/actions/upload-artifact/issues/38
+          # We have to manually move the folder and restore the file permissions in the next step.
+          path: ./llvm-${{ matrix.llvm }}
+      - name: Stamp LLVM
+        run: |
+          mkdir -p $HOME/mono-installs/ && mv ./llvm-${{ matrix.llvm }} $HOME/mono-installs/
+          chmod 755 $HOME/mono-installs/llvm-${{ matrix.llvm }}/bin/*
+          mkdir -p $HOME/mono-configs/ && touch $HOME/mono-configs/.stamp-${{ matrix.llvm }}-make
+      - name: Configure Runtime
+        run: |
+          export DISABLE_NO_WEAK_IMPORTS=1
+          python3 godot-mono-builds/ios.py configure --target=${{ matrix.runtime_target }} -j 2
+      - name: Configure
+        run: |
+          export DISABLE_NO_WEAK_IMPORTS=1
+          python3 godot-mono-builds/ios.py configure --target=${{ matrix.target }} -j 2
+      - name: Make
+        run:
+          python3 godot-mono-builds/ios.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
+      - name: Upload Runtime config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}-runtime-config.log
+          path: ~/mono-configs/ios-${{ matrix.runtime_target }}-release/config.log
+      - name: Upload Cross config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}-config.log
+          path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [armeabi-v7a, arm64-v8a, x86, x86_64]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install snapd
+      - name: Install Android SDK Manager
+        run: |
+          sudo snap install androidsdk
+          androidsdk "platforms;${ANDROID_PLATFORM}"
+          androidsdk "ndk-bundle"
+          androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
+          echo "::set-env name=ANDROID_SDK_ROOT::$HOME/snap/androidsdk/current/"
+          echo "::set-env name=ANDROID_NDK_ROOT::$ANDROID_SDK_ROOT/ndk-bundle"
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run:
+          python3 godot-mono-builds/android.py configure --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+      - name: Make
+        run:
+          python3 godot-mono-builds/android.py make --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/android-${{ matrix.target }}.zip android-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/android-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-${{ matrix.target }}-config.log
+          path: ~/mono-configs/android-${{ matrix.target }}-release/config.log
+
+  android-cross:
+    needs: llvm
+    name: Android Cross-compiler
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [cross-arm, cross-arm64, cross-x86, cross-x86_64, cross-arm-win, cross-arm64-win, cross-x86-win, cross-x86_64-win]
+        include:
+          - target: cross-arm
+            llvm: llvm64
+            runtime_target: armeabi-v7a
+          - target: cross-arm64
+            llvm: llvm64
+            runtime_target: arm64-v8a
+          - target: cross-x86
+            llvm: llvm64
+            runtime_target: x86
+          - target: cross-x86_64
+            llvm: llvm64
+            runtime_target: x86_64
+          - target: cross-arm-win
+            llvm: llvmwin64
+            runtime_target: armeabi-v7a
+          - target: cross-arm64-win
+            llvm: llvmwin64
+            runtime_target: arm64-v8a
+          - target: cross-x86-win
+            llvm: llvmwin64
+            runtime_target: x86
+          - target: cross-x86_64-win
+            llvm: llvmwin64
+            runtime_target: x86_64
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+      - name: Install Dependencies (Targeting Windows)
+        if: matrix.llvm == 'llvmwin64'
+        run: |
+          sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
+      - name: Install Android SDK Manager
+        run: |
+          sudo apt-get -y install snapd
+          sudo snap install androidsdk
+          androidsdk "platforms;${ANDROID_PLATFORM}"
+          androidsdk "ndk-bundle"
+          androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
+          echo "::set-env name=ANDROID_SDK_ROOT::$HOME/snap/androidsdk/current/"
+          echo "::set-env name=ANDROID_NDK_ROOT::$ANDROID_SDK_ROOT/ndk-bundle"
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Download LLVM artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: llvm-${{ matrix.llvm }}-ubuntu-latest
+          # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
+          # File permissions are also messed up: https://github.com/actions/upload-artifact/issues/38
+          # We have to manually move the folder and restore the file permissions in the next step.
+          path: ./llvm-${{ matrix.llvm }}
+      - name: Stamp LLVM
+        run: |
+          mkdir -p $HOME/mono-installs/ && mv ./llvm-${{ matrix.llvm }} $HOME/mono-installs/
+          chmod 755 $HOME/mono-installs/llvm-${{ matrix.llvm }}/bin/*
+          mkdir -p $HOME/mono-configs/ && touch $HOME/mono-configs/.stamp-${{ matrix.llvm }}-make
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure Runtime
+        run:
+          python3 godot-mono-builds/android.py configure --target=${{ matrix.runtime_target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+      - name: Configure
+        run:
+          python3 godot-mono-builds/android.py configure --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+      - name: Make
+        run:
+          python3 godot-mono-builds/android.py make --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/android-${{ matrix.target }}.zip android-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/android-${{ matrix.target }}.zip
+      - name: Upload Runtime config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-${{ matrix.target }}-runtime-config.log
+          path: ~/mono-configs/android-${{ matrix.runtime_target }}-release/config.log
+      - name: Upload Cross config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: android-${{ matrix.target }}-config.log
+          path: ~/mono-configs/android-${{ matrix.target }}-release/config.log
+
+  wasm:
+    name: WebAssembly
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [runtime, runtime-threads]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v2
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Configure
+        run:
+          python3 godot-mono-builds/wasm.py configure --target=${{ matrix.target }} -j 2
+      - name: Make
+        run:
+          python3 godot-mono-builds/wasm.py make --target=${{ matrix.target }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/wasm-${{ matrix.target }}.zip wasm-${{ matrix.target }}-release)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: wasm-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/wasm-${{ matrix.target }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: wasm-${{ matrix.target }}-config.log
+          path: ~/mono-configs/wasm-${{ matrix.target }}-release/config.log
+
+  llvm:
+    name: LLVM
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        target: [llvm64, llvmwin64]
+        exclude:
+          - os: macos-latest
+            target: llvmwin64
+    steps:
+      - name: Cache LLVM
+        id: cache_llvm
+        uses: actions/cache@v1
+        with:
+          path: ~/mono-installs/llvm-${{ matrix.target }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-llvm-${{ matrix.target }}
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies (Linux)
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true' && matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+      - name: Install Dependencies (Linux Targeting Windows)
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true' && matrix.os == 'ubuntu-latest' && matrix.target == 'llvmwin64'
+        run: |
+          sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
+      - name: Install Dependencies (macOS)
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true' && matrix.os == 'macos-latest'
+        run: |
+          brew install autoconf automake libtool pkg-config cmake python3
+      - name: Cache Mono Sources
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true'
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true' && steps.cache_llvm.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true'
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true' && steps.cache_llvm.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Make
+        if: steps.cache_llvm.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/llvm.py make --target=${{ matrix.target }} -j 2
+      - name: Upload LLVM Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: llvm-${{ matrix.target }}-${{ matrix.os }}
+          path: ~/mono-installs/llvm-${{ matrix.target }}
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: llvm-${{ matrix.target }}-${{ matrix.os }}-config.log
+          path: ~/mono-configs/llvm-${{ matrix.target }}/config.log
+
+  bcl:
+    name: BCL
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # desktop-win32 is disabled until build is fixed
+        product: [desktop, android, ios, wasm]
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+      - name: Install Dependencies (x86_64)
+        run: |
+          sudo apt-get -y update
+          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+      - name: Cache Mono Sources
+        id: cache_mono_sources
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.MONO_SOURCE_ROOT }}
+          key: ${{ runner.os }}-${{ env.MONO_SHA }}-mono-sources
+      - name: Checkout Mono Sources
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: mono/mono
+          ref: ${{ env.MONO_SHA }}
+          submodules: true
+          path: ${{ env.MONO_SOURCE_ROOT }}
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: godot-mono-builds
+      - name: Setup Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Patch Mono
+        if: steps.cache_mono_sources.outputs['cache-hit'] != 'true'
+        run:
+          python3 godot-mono-builds/patch_mono.py
+      - name: Make
+        run:
+          python3 godot-mono-builds/bcl.py make --product=${{ matrix.product }} -j 2
+      - name: Compress Output
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/bcl-${{ matrix.product }}.zip ${{ matrix.product }}-bcl)
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: bcl-${{ matrix.product }}
+          path: ~/mono-installs-artifacts/bcl-${{ matrix.product }}.zip
+      - name: Upload config.log After Error
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: bcl-${{ matrix.product }}-config.log
+          path: ~/mono-configs/bcl/config.log
+
+  create-release:
+    if: success() && github.ref == 'refs/heads/release' && github.event_name == 'push'
+    needs: [linux, windows, osx, ios, ios-cross, android, android-cross, wasm, bcl]
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Short SHA
+        id: short-sha
+        run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: release-${{ steps.short-sha.outputs.sha8 }}
+          release_name: Release ${{ steps.short-sha.outputs.sha8 }}
+          body: |
+            Mono:
+            - Branch: ${{ env.MONO_BRANCH }}
+            - Commit: ${{ env.MONO_SHA }}
+
+            EMSDK Version: 1.38.47-upstream
+            Android Platform: android-29
+            Android CMake Version: 3.6.4111459
+          draft: false
+          prerelease: false
+
+  upload-release-artifacts:
+    if: success() && github.ref == 'refs/heads/release' && github.event_name == 'push'
+    needs: create-release
+    name: Upload Release Artifacts
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # bcl-desktop-win32 is disabled until build is fixed
+        artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-x86_64,
+                        ios-arm64, ios-x86_64, ios-cross-arm64,
+                        android-armeabi-v7a, android-arm64-v8a, android-x86, android-x86_64,
+                        android-cross-arm, android-cross-arm64, android-cross-x86, android-cross-x86_64,
+                        android-cross-arm-win, android-cross-arm64-win, android-cross-x86-win, android-cross-x86_64-win,
+                        wasm-runtime, wasm-runtime-threads,
+                        bcl-desktop, bcl-android, bcl-ios, bcl-wasm]
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ./
+      - name: Upload linux-x86
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.release_upload_url }}
+          asset_path: ./${{ matrix.artifact_name }}.zip
+          asset_name: ${{ matrix.artifact_name }}.zip
+          asset_content_type: application/zip
