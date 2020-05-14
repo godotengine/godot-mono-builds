@@ -1,4 +1,7 @@
 # Mono build scripts for Godot
+
+![Build](https://github.com/godotengine/godot-mono-builds/workflows/Build/badge.svg)
+
 This repository contains scripts for building the Mono runtime to use with Godot Engine
 
 ## Command-line options
