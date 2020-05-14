@@ -800,9 +800,10 @@ jobs:
             - Branch: ${{ env.MONO_BRANCH }}
             - Commit: ${{ env.MONO_SHA }}
 
-            EMSDK Version: 1.38.47-upstream
-            Android Platform: android-29
-            Android CMake Version: 3.6.4111459
+            EMSDK Version: ${{ env.EMSDK_VERSION }}
+            Android Platform: ${{ env.ANDROID_PLATFORM }}
+            Android API: ${{ env.ANDROID_API }}
+            iOS Min Version: ${{ env.IOS_VERSION_MIN }}
           draft: false
           prerelease: false
 
