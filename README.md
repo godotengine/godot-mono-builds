@@ -123,6 +123,8 @@ _AOT cross-compilers for WebAssembly cannot be built with this script yet._
 ./bcl.py make --product=wasm
 ```
 
+**NOTE:** Building the Desktop BCL for the current system is required first to be able to build the Desktop BCL for Windows.
+
 ## Reference Assemblies
 
 ```bash
