@@ -198,6 +198,12 @@ def make(opts: DesktopOpts, product: str, target_platform: str, target: str):
     if opts.strip_libs:
         strip_libs(opts, product, target_platform, target)
 
+def copy_bcl(opts: DesktopOpts, product: str, target_platform: str, target: str):
+    from distutils.dir_util import copy_tree
+    from bcl import get_profile_install_dirs
+    dest_dir = path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration), 'lib/mono/4.5')
+    for src_dir in get_profile_install_dirs(opts, 'desktop'):
+        copy_tree(src_dir, dest_dir)
 
 def clean(opts: DesktopOpts, product: str, target_platform: str, target: str):
     rm_rf(
@@ -215,13 +221,14 @@ def run_main(raw_args, target_platform):
     actions = OrderedDict()
     actions['configure'] = configure
     actions['make'] = make
+    actions['copy_bcl'] = copy_bcl
     actions['clean'] = clean
 
     parser = cmd_utils.build_arg_parser(description='Builds the Mono runtime for the Desktop')
 
     default_help = 'default: %(default)s'
 
-    parser.add_argument('action', choices=['configure', 'make', 'clean'])
+    parser.add_argument('action', choices=['configure', 'make', 'copy_bcl', 'clean'])
     parser.add_argument('--target', choices=targets[target_platform], action='append', required=True)
     parser.add_argument('--with-llvm', action='store_true', default=False, help=default_help)
 

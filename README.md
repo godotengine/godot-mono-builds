@@ -30,6 +30,19 @@ export MONO_SOURCE_ROOT=$HOME/git/mono
 - OSXCROSS is supported expect for building the Mono cross-compilers.
 - Building on Windows is not supported. It's possible to use Cygwin or WSL (Windows Subsystem for Linux) but this hasn't been tested.
 
+## Compiling Godot for Desktop with this Runtime
+
+In order to compile mono into Godot for deskop you will need to first build for desktop (see 'Desktop' below), and then Base Class Libraries (see 'Base Class library' below).
+
+Then run the 'copy_bcl' action of the same desktop script you ran configure and make on, specifying the same target platforms you used before. This will copy the bcl runtime into the runtime directories that the subsequent Godot build (using `copy_mono_root=yes`) expects to find them in.
+e.g.
+`./linux.py copy_bcl --target=x86 --target=x86_64`
+
+Then you'll need to compile Godot using `copy_mono_root=yes` and `mono_static=yes`
+e.g.
+`scons -j6 target=release_debug tools=yes module_mono_enabled=yes copy_mono_root=yes mono_static=yes mono_prefix="$HOME/mono-installs/desktop-linux-x86_64-release"`
+
+
 ## Desktop
 
 ```bash
