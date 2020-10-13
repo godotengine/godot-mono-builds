@@ -10,9 +10,9 @@ This repository contains scripts for building the Mono runtime to use with Godot
 
 These scripts are based on the Mono [sdks](https://github.com/mono/mono/tree/master/sdks) makefiles, with some changes to work well with Godot. Some platforms or targets depend on files from the `sdks` directory in the Mono source repository. This directory may be missing from tarballs. If that's the case, cloning the git repository may be needed. [This table](https://www.mono-project.com/docs/about-mono/versioning/#mono-source-versioning) can be used to determine the branch for a specific version of Mono.
 
-Some patches need to be applied to the Mono sources before building. This can be done by running `python ./patch_mono.py`.
+Some patches need to be applied to the Mono sources before building. This can be done by running `python3 ./patch_mono.py`.
 
-Run `python SCRIPT.py --help` for the full list of command line options.
+Run `python3 SCRIPT.py --help` for the full list of command line options.
 
 By default, the scripts will install the resulting files to `$HOME/mono-installs`.
 A custom output directory can be specified with the `--install-dir` option.
