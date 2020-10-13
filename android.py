@@ -415,9 +415,9 @@ def make_standalone_toolchain(opts: AndroidOpts, target: str, api: str):
     if os.path.isdir(path_join(install_dir, 'bin')):
         return # Looks like it's already there, so no need to re-create it
     command = path_join(opts.android_ndk_root, 'build', 'tools', 'make_standalone_toolchain.py')
-    args = ['--verbose', '--force', '--api=' + api, '--arch=' + AndroidTargetTable.archs[target],
+    args = [command, '--verbose', '--force', '--api=' + api, '--arch=' + AndroidTargetTable.archs[target],
             '--install-dir=' + install_dir]
-    run_command(command, args=args, name='make_standalone_toolchain')
+    run_command('python3', args=args, name='make_standalone_toolchain')
 
 
 def strip_libs(opts: AndroidOpts, product: str, target: str, api: str):
