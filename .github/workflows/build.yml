@@ -27,9 +27,9 @@ on:
 
 env:
   # Use SHA instead of the branch for caching purposes
-  MONO_TAG: mono-6.8.0.123
+  MONO_TAG: mono-6.12.0.111
   PYTHON_VERSION: 3.8
-  EMSDK_VERSION: 1.38.47-upstream
+  EMSDK_VERSION: 1.39.9
   ANDROID_PLATFORM: android-29
   ANDROID_CMAKE_VERSION: 3.6.4111459
   ANDROID_API: 21

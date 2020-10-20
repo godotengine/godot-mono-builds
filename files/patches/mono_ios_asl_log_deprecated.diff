@@ -6,8 +6,8 @@ index 3cb127bad59..30ff5edc307 100644
   */
  #include <config.h>
  
--#if defined(HOST_WATCHOS) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_3_0)
-+#if (defined(HOST_WATCHOS) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_3_0)) \
+-#if (defined(HOST_WATCHOS) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_3_0)) || defined(HOST_MACCAT)
++#if (defined(HOST_WATCHOS) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_3_0)) || defined(HOST_MACCAT) \
 +	|| (defined(HOST_IOS) && (__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ >= 100000))
  /* emitted by clang:
   *   > /Users/lewurm/work/mono-watch4/mono/utils/mono-log-darwin.c:35:2: error: 'asl_log' is \
