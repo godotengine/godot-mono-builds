@@ -38,8 +38,8 @@ def make(opts: BaseOpts, target: str):
 
         CMAKE_ARGS += [
             '-DCMAKE_EXE_LINKER_FLAGS="-static"',
-            '-DCROSS_TOOLCHAIN_FLAGS_NATIVE=-DCMAKE_TOOLCHAIN_FILE=%s/external/llvm/cmake/modules/NATIVE.cmake' % opts.mono_source_root,
-            '-DCMAKE_TOOLCHAIN_FILE=%s/external/llvm/cmake/modules/%s.cmake' % (opts.mono_source_root, mxe),
+            '-DCROSS_TOOLCHAIN_FLAGS_NATIVE=-DCMAKE_TOOLCHAIN_FILE=%s/external/llvm-project/llvm/cmake/modules/NATIVE.cmake' % opts.mono_source_root,
+            '-DCMAKE_TOOLCHAIN_FILE=%s/external/llvm-project/llvm/cmake/modules/%s.cmake' % (opts.mono_source_root, mxe),
             '-DLLVM_ENABLE_THREADS=Off',
             '-DLLVM_BUILD_EXECUTION_ENGINE=Off'
         ]
@@ -58,7 +58,7 @@ def make(opts: BaseOpts, target: str):
         replace_in_new_file(
             src_file='%s/sdks/builds/%s.cmake.in' % (opts.mono_source_root, mxe),
             search='@MXE_PATH@', replace=opts.mxe_prefix,
-            dst_file='%s/external/llvm/cmake/modules/%s.cmake' % (opts.mono_source_root, mxe)
+            dst_file='%s/external/llvm-project/llvm/cmake/modules/%s.cmake' % (opts.mono_source_root, mxe)
         )
 
     if target in ['llvm32', 'llvmwin32']:

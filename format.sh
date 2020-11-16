@@ -6,12 +6,14 @@ IFS=$'\n\t'
 # Loops through all text files tracked by Git.
 git grep -zIl '' |
 while IFS= read -rd '' f; do
-    # Exclude csproj and hdr files.
+    # Exclude csproj and hdr files, and patches.
     if [[ "$f" == *"csproj" ]]; then
         continue
     elif [[ "$f" == *"hdr" ]]; then
         continue
     elif [[ "$f" == *"diff" ]]; then
+        continue
+    elif [[ "$f" == *"patch" ]]; then
         continue
     fi
     # Ensures that files are UTF-8 formatted.

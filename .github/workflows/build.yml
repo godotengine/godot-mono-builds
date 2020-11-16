@@ -27,9 +27,9 @@ on:
 
 env:
   # Use SHA instead of the branch for caching purposes
-  MONO_TAG: mono-6.8.0.123
+  MONO_TAG: mono-6.12.0.111
   PYTHON_VERSION: 3.8
-  EMSDK_VERSION: 1.38.47-upstream
+  EMSDK_VERSION: 1.39.9
   ANDROID_PLATFORM: android-29
   ANDROID_CMAKE_VERSION: 3.6.4111459
   ANDROID_API: 21
@@ -45,7 +45,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies (x86)
         if: matrix.target == 'x86'
         run: |
@@ -118,7 +118,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies (x86)
         if: matrix.target == 'x86'
         run: |
@@ -192,7 +192,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           brew install autoconf automake libtool pkg-config cmake python3
@@ -256,7 +256,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           brew install autoconf automake libtool pkg-config cmake python3
@@ -326,7 +326,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           brew install autoconf automake libtool pkg-config cmake python3
@@ -414,7 +414,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
@@ -426,8 +426,8 @@ jobs:
           androidsdk "platforms;${ANDROID_PLATFORM}"
           androidsdk "ndk-bundle"
           androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
-          echo "::set-env name=ANDROID_SDK_ROOT::$HOME/snap/androidsdk/current/"
-          echo "::set-env name=ANDROID_NDK_ROOT::$ANDROID_SDK_ROOT/ndk-bundle"
+          echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v1.2.0
@@ -540,7 +540,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
@@ -556,8 +556,8 @@ jobs:
           androidsdk "platforms;${ANDROID_PLATFORM}"
           androidsdk "ndk-bundle"
           androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
-          echo "::set-env name=ANDROID_SDK_ROOT::$HOME/snap/androidsdk/current/"
-          echo "::set-env name=ANDROID_NDK_ROOT::$ANDROID_SDK_ROOT/ndk-bundle"
+          echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v1.2.0
@@ -640,7 +640,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
@@ -726,7 +726,7 @@ jobs:
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-llvm-${{ matrix.target }}
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies (Linux)
         if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux'
         run: |
@@ -800,7 +800,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
-          echo "::set-env name=MONO_SOURCE_ROOT::$GITHUB_WORKSPACE/mono_sources"
+          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
