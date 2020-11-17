@@ -26,6 +26,19 @@ test_profiles_table = {
     'wasm': ['wasm']
 }
 
+def get_install_dir(opts: BaseOpts, product: str):
+    return path_join(opts.install_dir, '%s-bcl' % product)
+
+def get_profile_dir(profile: str, product: str):
+    if product == 'desktop-win32':
+        return profile + '-win32'
+    else:
+        return profile
+
+def get_profile_install_dirs(opts: BaseOpts, product: str):
+    install_dir = get_install_dir(opts, product)
+    profiles = profiles_table[product]
+    return [path_join(install_dir, get_profile_dir(profile, product)) for profile in profiles]
 
 def configure_bcl(opts: BclOpts):
     stamp_file = path_join(opts.configure_dir, '.stamp-bcl-configure')
@@ -91,7 +104,7 @@ def make_product(opts: BclOpts, product: str):
     profiles = profiles_table[product]
     test_profiles = test_profiles_table[product]
 
-    install_dir = path_join(opts.install_dir, '%s-bcl' % product)
+    install_dir = get_install_dir(opts, product)
 
     mkdir_p(install_dir)
 
@@ -112,7 +125,7 @@ def make_product(opts: BclOpts, product: str):
     # Copy the bcl profiles to the output directory
     from distutils.dir_util import copy_tree
     for profile in profiles:
-        profile_dir = profile + '-win32' if product == 'desktop-win32' else profile
+        profile_dir = get_profile_dir(profile, product)
         copy_tree('%s/mcs/class/lib/%s' % (opts.mono_source_root, profile_dir), '%s/%s' % (install_dir, profile_dir))
 
     # Remove unneeded files
@@ -148,7 +161,7 @@ def make_product(opts: BclOpts, product: str):
 def clean_product(opts: BclOpts, product: str):
     clean_bcl(opts)
 
-    install_dir = path_join(opts.install_dir, '%s-bcl' % product)
+    install_dir = get_install_dir(opts, product)
     rm_rf(install_dir)
 
 
