@@ -2,7 +2,16 @@
 
 [![Build](https://github.com/godotengine/godot-mono-builds/workflows/Build/badge.svg)](https://github.com/godotengine/godot-mono-builds/actions)
 
-This repository contains scripts for building the Mono runtime to use with Godot Engine
+This repository contains scripts for building the Mono runtime to use with Godot Engine.
+
+## Supported versions
+
+The scripts are tested against specific versions of the toolchains used by Godot.
+While they may work with other versions, you might have issues applying patches or compiling, so we recommend using the versions below.
+
+- Mono: 6.12.0.111.
+- Emscripten: 1.39.9.
+- Android: API level 29.
 
 ## Command-line options
 
