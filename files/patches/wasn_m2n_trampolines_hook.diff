@@ -1,0 +1,52 @@
+diff --git a/mono/mini/aot-runtime-wasm.c b/mono/mini/aot-runtime-wasm.c
+index ccc5a26510c..2f7001be00b 100644
+--- a/mono/mini/aot-runtime-wasm.c
++++ b/mono/mini/aot-runtime-wasm.c
+@@ -112,6 +112,22 @@ mono_wasm_interp_to_native_trampoline (void *target_func, InterpMethodArguments
+ 	icall_trampoline_dispatch (cookie, target_func, margs);
+ }
+ 
++typedef mono_bool (*GodotMonoM2nIcallTrampolineDispatch)(const char *cookie, void *target_func, InterpMethodArguments *margs);
++
++GodotMonoM2nIcallTrampolineDispatch m2n_icall_trampoline_dispatch_hook = NULL;
++
++GodotMonoM2nIcallTrampolineDispatch
++godot_mono_get_m2n_icall_trampoline_dispatch_hook (void)
++{
++	return m2n_icall_trampoline_dispatch_hook;
++}
++
++MONO_API void
++godot_mono_register_m2n_icall_trampoline_dispatch_hook (GodotMonoM2nIcallTrampolineDispatch hook)
++{
++	m2n_icall_trampoline_dispatch_hook = hook;
++}
++
+ #else /* TARGET_WASM */
+ 
+ MONO_EMPTY_SOURCE_FILE (aot_runtime_wasm);
+diff --git a/mono/mini/wasm_m2n_invoke.g.h b/mono/mini/wasm_m2n_invoke.g.h
+index aea7e9698ad..3bb715f9fd8 100644
+--- a/mono/mini/wasm_m2n_invoke.g.h
++++ b/mono/mini/wasm_m2n_invoke.g.h
+@@ -1017,6 +1017,10 @@ wasm_invoke_vil (void *target_func, InterpMethodArguments *margs)
+ 
+ }
+ 
++typedef mono_bool (*GodotMonoM2nIcallTrampolineDispatch)(const char *cookie, void *target_func, InterpMethodArguments *margs);
++
++GodotMonoM2nIcallTrampolineDispatch godot_mono_get_m2n_icall_trampoline_dispatch_hook (void);
++
+ static void
+ icall_trampoline_dispatch (const char *cookie, void *target_func, InterpMethodArguments *margs)
+ {
+@@ -1820,5 +1824,9 @@ icall_trampoline_dispatch (const char *cookie, void *target_func, InterpMethodAr
+ 			}
+ 		}
+ 	}
++	GodotMonoM2nIcallTrampolineDispatch trampoline_dispatch_hook = godot_mono_get_m2n_icall_trampoline_dispatch_hook ();
++	if (trampoline_dispatch_hook != NULL && trampoline_dispatch_hook (cookie, target_func, margs)) {
++		return;
++	}
+ 	g_error ("CANNOT HANDLE COOKIE %s\n", cookie);
+ }
