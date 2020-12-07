@@ -522,7 +522,9 @@ def main(raw_args):
     parser.add_argument('--toolchains-prefix', default=path_join(home, 'android-toolchains'), help=default_help)
     parser.add_argument('--android-sdk', default=android_sdk_default, help=default_help)
     parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
-    parser.add_argument('--android-api-version', default='21', help=default_help)
+    # Default API version should be in sync with Godot's platform/android/detect.py.
+    # Note that `get_api_version_or_min` will upgrade it to 21 for arm64v8 and x86_64.
+    parser.add_argument('--android-api-version', default='18', help=default_help)
     parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
