@@ -139,6 +139,27 @@ def make_product(opts: BclOpts, product: str):
             file_pattern_recursive = '%s/**/%s' % (install_dir, file_pattern)
             [rm_rf(x) for x in glob.iglob(file_pattern_recursive, recursive=True)]
 
+    # WebAssembly.Framework.sln
+    if product == 'wasm':
+        wasm_fx_output_dir = '%s/sdks/wasm/framework/netstandard2.0' % opts.mono_source_root
+        wasm_fx_sln_file = '%s/sdks/wasm/framework/src/WebAssembly.Framework.sln' % opts.mono_source_root
+        output_dir = path_join(install_dir, 'wasm')
+
+        from msbuild_helper import build_solution
+        build_solution(wasm_fx_sln_file, 'Release')
+
+        import shutil
+        from glob import glob
+
+        fglob = glob(path_join(wasm_fx_output_dir, '*.dll'))
+
+        if not opts.remove_pdb:
+            fglob.extend(glob(path_join(wasm_fx_output_dir, '*.pdb')))
+
+        for file in fglob:
+            if os.path.isfile(file):
+                shutil.copy(file, output_dir)
+
     # godot_android_ext profile (custom 'Mono.Android.dll')
     if product == 'android':
         this_script_dir = os.path.dirname(os.path.realpath(__file__))
