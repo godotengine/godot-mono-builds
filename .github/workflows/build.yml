@@ -26,13 +26,17 @@ on:
 # Use ubuntu-latest for the WASM runtime ("machine `wasm32' not recognized" on ubuntu-16.04)
 
 env:
-  # Use SHA instead of the branch for caching purposes
-  MONO_TAG: mono-6.12.0.111
+  # Use SHA or tag instead of the branch for caching purposes.
+  MONO_TAG: mono-6.12.0.114
   PYTHON_VERSION: 3.8
+  # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
+  ANDROID_CMAKE_VERSION: 3.10.2.4988404
+  # These should be synced with the Godot repo.
+  # platform/android/java/app/config.gradle
   ANDROID_PLATFORM: android-29
-  ANDROID_CMAKE_VERSION: 3.6.4111459
-  ANDROID_API: 21
+  ANDROID_API: 18
+  # platform/iphone/detect.py
   IOS_VERSION_MIN: 10.0
 
 jobs:
