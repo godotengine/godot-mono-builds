@@ -29,7 +29,8 @@ def main(raw_args):
         'fix-mono-android-tkill.diff',
         'mono-dbg-agent-clear-tls-instead-of-abort.diff',
         'bcl-profile-platform-override.diff',
-        'mono_ios_asl_log_deprecated.diff'
+        'mono_ios_asl_log_deprecated.diff',
+        'wasm_m2n_trampolines_hook.diff',
     ]
 
     if os.path.isfile(os.path.join(mono_source_root, 'mono/tools/offsets-tool/offsets-tool.py')):
