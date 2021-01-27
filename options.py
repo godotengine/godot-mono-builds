@@ -17,6 +17,7 @@ class BaseOpts:
 class RuntimeOpts(BaseOpts):
     configuration: str
     release: bool
+    is_sim: bool
     enable_cxx: bool
     strip_libs: bool
 
@@ -72,6 +73,7 @@ def runtime_opts_from_args(args):
         **vars(base_opts_from_args(args)),
         configuration = args.configuration,
         release = (args.configuration == 'release'),
+        is_sim = args.is_sim,
         enable_cxx = args.enable_cxx,
         strip_libs = args.strip_libs
     )

@@ -64,6 +64,7 @@ def add_runtime_arguments(parser, default_help):
     parser.add_argument('--configuration', choices=['release', 'debug'], default='release', help=default_help)
     parser.add_argument('--enable-cxx', action='store_true', default=False, help=default_help)
     parser.add_argument('--strip-libs', type=custom_bool, default=True, help='Strip the libraries if possible after running make.\n' + default_help)
+    parser.add_argument('--is-sim', type=custom_bool, default=False, help='Use iOS simulator SDK.\n'+ default_help)
 
 
 def expand_input_targets(input_targets, target_shortcuts=[]):

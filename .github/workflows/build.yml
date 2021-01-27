@@ -257,6 +257,10 @@ jobs:
     strategy:
       matrix:
         target: [arm64, x86_64]
+        sim: ['no', 'yes']
+        exclude:
+          - target: x86_64
+            sim: 'no'
     steps:
       - name: Set Environment Variables
         run: |
@@ -294,23 +298,42 @@ jobs:
       - name: Configure
         run: |
           export DISABLE_NO_WEAK_IMPORTS=1
-          python3 godot-mono-builds/ios.py configure --target=${{ matrix.target }} -j 2 --ios-version-min=${IOS_VERSION_MIN}
+          python3 godot-mono-builds/ios.py configure --is-sim=${{ matrix.sim }} --target=${{ matrix.target }} -j 2 --ios-version-min=${IOS_VERSION_MIN}
       - name: Make
         run:
-          python3 godot-mono-builds/ios.py make --target=${{ matrix.target }} -j 2
-      - name: Compress Output
+          python3 godot-mono-builds/ios.py make --is-sim=${{ matrix.sim }} --target=${{ matrix.target }} -j 2
+      - name: Compress Output (Simulator)
+        if: matrix.sim == 'yes'
+        run: |
+          mkdir -p $HOME/mono-installs-artifacts
+          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}-simulator.zip ios-${{ matrix.target }}-release-simulator)
+      - name: Compress Output (Device)
+        if: matrix.sim == 'no'
         run: |
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
-      - name: Upload Artifact
+      - name: Upload Artifact (Simulator)
+        if: matrix.sim == 'yes'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}
+          path: ~/mono-installs-artifacts/ios-${{ matrix.target }}-simulator.zip
+      - name: Upload Artifact (Device)
+        if: matrix.sim == 'no'
         uses: actions/upload-artifact@v2
         with:
           name: ios-${{ matrix.target }}
           path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
-      - name: Upload config.log After Error
-        if: ${{ failure() }}
+      - name: Upload config.log After Error (Simulator)
+        if: matrix.sim == 'yes' && ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ios-${{ matrix.target }}-config.log
+          path: ~/mono-configs/ios-${{ matrix.target }}-release-simulator/config.log
+      - name: Upload config.log After Error (Device)
+        if: matrix.sim == 'no' && ${{ failure() }}
         uses: actions/upload-artifact@v2
         with:
           name: ios-${{ matrix.target }}-config.log
@@ -377,14 +400,14 @@ jobs:
       - name: Configure Runtime
         run: |
           export DISABLE_NO_WEAK_IMPORTS=1
-          python3 godot-mono-builds/ios.py configure --target=${{ matrix.runtime_target }} -j 2
+          python3 godot-mono-builds/ios.py configure --is-sim=no --target=${{ matrix.runtime_target }} -j 2
       - name: Configure
         run: |
           export DISABLE_NO_WEAK_IMPORTS=1
-          python3 godot-mono-builds/ios.py configure --target=${{ matrix.target }} -j 2
+          python3 godot-mono-builds/ios.py configure --is-sim=no --target=${{ matrix.target }} -j 2
       - name: Make
         run:
-          python3 godot-mono-builds/ios.py make --target=${{ matrix.target }} -j 2
+          python3 godot-mono-builds/ios.py make --is-sim=no --target=${{ matrix.target }} -j 2
       - name: Compress Output
         run: |
           mkdir -p $HOME/mono-installs-artifacts

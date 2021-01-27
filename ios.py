@@ -185,7 +185,7 @@ def setup_ios_simulator_template(env: dict, opts: iOSOpts, target: str):
     if not ios_sysroot_path:
         raise RuntimeError('Cannot find iOS SDK; specify one manually with \'--ios-sdk\'.')
 
-    sysroot_flags = ['-isysroot', ios_sysroot_path, '-miphoneos-version-min=%s' % opts.ios_version_min]
+    sysroot_flags = ['-isysroot', ios_sysroot_path, '-mios-simulator-version-min=%s' % opts.ios_version_min]
 
     arch = iOSTargetTable.archs[target]
     host_triple = iOSTargetTable.host_triples[target]
@@ -313,8 +313,7 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
     offsets_dumper_abi = iOSCrossTable.offsets_dumper_abis[target]
     host_triple = '%s-apple-darwin11' % host_arch
 
-    is_sim = device_target in sim_targets
-
+    is_sim = opts.is_sim
     ios_sysroot_path = opts.ios_sdk_path
 
     if not ios_sysroot_path and sys.platform == 'darwin':
@@ -384,8 +383,12 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
 
     AC_VARS = ['ac_cv_func_shm_open_working_with_mmap=no']
 
-    CFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments']
-    CXXFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments', '-stdlib=libc++']
+    if opts.is_sim:
+        CFLAGS = ['-isysroot', osx_sysroot_path, '-mios-simulator-version-min=10.9', '-Qunused-arguments']
+        CXXFLAGS = ['-isysroot', osx_sysroot_path, '-mios-simulator-version-min=10.9', '-Qunused-arguments', '-stdlib=libc++']
+    else:
+        CFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments']
+        CXXFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments', '-stdlib=libc++']
     CPPFLAGS = ['-DMONOTOUCH=1']
     LDFLAGS = ['-stdlib=libc++']
 
@@ -421,8 +424,7 @@ def strip_libs(opts: iOSOpts, product: str, target: str):
 
 def configure(opts: iOSOpts, product: str, target: str):
     env = {}
-
-    is_sim = target in sim_targets
+    is_sim = opts.is_sim
 
     if is_cross(target):
         import llvm
@@ -443,8 +445,12 @@ def configure(opts: iOSOpts, product: str, target: str):
 
 def make(opts: iOSOpts, product: str, target: str):
     env = {}
+    is_sim = opts.is_sim
 
-    build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    if is_sim:
+        build_dir = path_join(opts.configure_dir, '%s-%s-%s-simulator' % (product, target, opts.configuration))
+    else:
+        build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
 
     make_args = make_default_args(opts)
     make_args += ['-C', build_dir]
@@ -459,11 +465,20 @@ def make(opts: iOSOpts, product: str, target: str):
 
 
 def clean(opts: iOSOpts, product: str, target: str):
-    rm_rf(
-        path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration)),
-        path_join(opts.configure_dir, '%s-%s-%s.config.cache' % (product, target, opts.configuration)),
-        path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
-    )
+    is_sim = opts.is_sim
+
+    if is_sim:
+        rm_rf(
+            path_join(opts.configure_dir, '%s-%s-%s-simulator' % (product, target, opts.configuration)),
+            path_join(opts.configure_dir, '%s-%s-%s-simulator.config.cache' % (product, target, opts.configuration)),
+            path_join(opts.install_dir, '%s-%s-%s-simulator' % (product, target, opts.configuration))
+        )
+    else:
+        rm_rf(
+            path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration)),
+            path_join(opts.configure_dir, '%s-%s-%s.config.cache' % (product, target, opts.configuration)),
+            path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
+        )
 
 
 def main(raw_args):

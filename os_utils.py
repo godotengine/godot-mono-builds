@@ -213,7 +213,10 @@ ${OSXCROSS_COMMAND} "$@";
 exit $?;
 """ % os.path.join(toolchain_path, 'lib')
 
-    build_dir = os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    if opts.is_sim:
+        build_dir = os.path.join(opts.configure_dir, '%s-%s-%s-simulator' % (product, target, opts.configuration))
+    else:
+        build_dir = os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
     wrapper_path = os.path.join(build_dir, 'osxcross_cmd_wrapper.sh')
 
     mkdir_p(build_dir)

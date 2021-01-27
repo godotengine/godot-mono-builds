@@ -13,6 +13,8 @@ def setup_runtime_template(env: dict, opts: RuntimeOpts, product: str, target: s
     elif 'x86_64' in host_triple:
         BITNESS = '-m64'
 
+    is_sim = opts.is_sim
+
     CFLAGS = []
     CFLAGS += ['-O2', '-g'] if opts.release else ['-O0', '-ggdb3', '-fno-omit-frame-pointer']
     CFLAGS += env.get('_%s-%s_CFLAGS' % (product, target), [])
@@ -76,8 +78,12 @@ def setup_runtime_template(env: dict, opts: RuntimeOpts, product: str, target: s
 
     CONFIGURE_FLAGS = []
     CONFIGURE_FLAGS += ['--host=%s' % host_triple] if host_triple else []
-    CONFIGURE_FLAGS += ['--cache-file=%s/%s-%s-%s.config.cache' % (opts.configure_dir, product, target, opts.configuration)]
-    CONFIGURE_FLAGS += ['--prefix=%s/%s-%s-%s' % (opts.install_dir, product, target, opts.configuration)]
+    if is_sim:
+        CONFIGURE_FLAGS += ['--cache-file=%s/%s-%s-%s-simulator.config.cache' % (opts.configure_dir, product, target, opts.configuration)]
+        CONFIGURE_FLAGS += ['--prefix=%s/%s-%s-%s-simulator' % (opts.install_dir, product, target, opts.configuration)]
+    else:
+        CONFIGURE_FLAGS += ['--cache-file=%s/%s-%s-%s.config.cache' % (opts.configure_dir, product, target, opts.configuration)]
+        CONFIGURE_FLAGS += ['--prefix=%s/%s-%s-%s' % (opts.install_dir, product, target, opts.configuration)]
     CONFIGURE_FLAGS += ['--enable-cxx'] if opts.enable_cxx else []
     CONFIGURE_FLAGS += env.get('_cross-runtime_%s-%s_CONFIGURE_FLAGS' % (product, target), [])
     CONFIGURE_FLAGS += env.get('_%s-%s_CONFIGURE_FLAGS' % (product, target), [])
@@ -108,6 +114,8 @@ def setup_runtime_cross_template(env: dict, opts: RuntimeOpts, product: str, tar
 
     offsets_tool_env = None
 
+    is_sim = opts.is_sim
+
     if old_offsets_tool:
         # Setup old offsets-tool-py if present (new location doesn't require setup)
         run_command('make', ['-C', '%s/tools/offsets-tool-py' % opts.mono_source_root, 'setup'], name='make offsets-tool-py')
@@ -118,10 +126,23 @@ def setup_runtime_cross_template(env: dict, opts: RuntimeOpts, product: str, tar
         offsets_tool_env = os.environ.copy()
         offsets_tool_env.update(virtualenv_vars)
 
-    build_dir = '%s/%s-%s-%s' % (opts.configure_dir, product, target, opts.configuration)
+    if is_sim:
+        build_dir = '%s/%s-%s-%s-simulator' % (opts.configure_dir, product, target, opts.configuration)
+    else:
+        build_dir = '%s/%s-%s-%s' % (opts.configure_dir, product, target, opts.configuration)
     mkdir_p(build_dir)
 
-    run_command('python3', [
+    if is_sim:
+        run_command('python3', [
+                old_offsets_tool_path if old_offsets_tool else new_offsets_tool_path,
+                '--targetdir=%s/%s-%s-%s-simulator' % (opts.configure_dir, product, device_target, opts.configuration),
+                '--abi=%s' % offsets_dumper_abi,
+                '--monodir=%s' % opts.mono_source_root,
+                '--outfile=%s/%s.h' % (build_dir, target_triple)
+            ] + env['_%s-%s_OFFSETS_DUMPER_ARGS' % (product, target)],
+            env=offsets_tool_env, name='offsets-tool')
+    else:
+        run_command('python3', [
             old_offsets_tool_path if old_offsets_tool else new_offsets_tool_path,
             '--targetdir=%s/%s-%s-%s' % (opts.configure_dir, product, device_target, opts.configuration),
             '--abi=%s' % offsets_dumper_abi,
@@ -145,7 +166,11 @@ def run_autogen(opts: RuntimeOpts):
 
 
 def run_configure(env: dict, opts: RuntimeOpts, product: str, target: str):
-    build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    is_sim = opts.is_sim
+    if is_sim:
+        build_dir = path_join(opts.configure_dir, '%s-%s-%s-simulator' % (product, target, opts.configuration))
+    else:
+        build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
     mkdir_p(build_dir)
 
     def str_dict_val(val):
