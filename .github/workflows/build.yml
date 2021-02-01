@@ -674,7 +674,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup Emscripten SDK
-        uses: mymindstorm/setup-emsdk@v7
+        uses: mymindstorm/setup-emsdk@v8
         with:
           version: ${{ env.EMSDK_VERSION }}
       - name: Patch Mono
