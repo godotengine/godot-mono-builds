@@ -27,8 +27,8 @@ on:
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
-  MONO_TAG: mono-6.12.0.122
-  PYTHON_VERSION: 3.8
+  MONO_TAG: mono-6.12.0.144
+  PYTHON_VERSION: 3.9
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
   ANDROID_CMAKE_VERSION: 3.10.2.4988404
@@ -36,6 +36,7 @@ env:
   # platform/android/java/app/config.gradle
   ANDROID_PLATFORM: android-29
   ANDROID_API: 18
+  ANDROID_NDK_VERSION: 21.4.7075529
   # platform/iphone/detect.py
   IOS_VERSION_MIN: 10.0
 
@@ -428,10 +429,10 @@ jobs:
         run: |
           sudo snap install androidsdk
           androidsdk "platforms;${ANDROID_PLATFORM}"
-          androidsdk "ndk-bundle"
+          androidsdk "ndk;${ANDROID_NDK_VERSION}"
           androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
           echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v2.1.5
@@ -557,11 +558,10 @@ jobs:
         run: |
           sudo apt-get -y install snapd
           sudo snap install androidsdk
-          androidsdk "platforms;${ANDROID_PLATFORM}"
-          androidsdk "ndk-bundle"
+          androidsdk "ndk;${ANDROID_NDK_VERSION}"
           androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
           echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v2.1.5
