@@ -14,7 +14,7 @@ import runtime
 this_script_dir = os.path.dirname(os.path.realpath(__file__))
 
 device_targets = ['armv7', 'arm64']
-sim_targets = ['i386', 'x86_64']
+sim_targets = ['i386', 'x86_64', 'arm64-sim']
 cross_targets = ['cross-armv7', 'cross-arm64']
 
 
@@ -26,6 +26,7 @@ class iOSTargetTable:
     archs = {
         'armv7': 'arm',
         'arm64': 'arm64',
+        'arm64-sim': 'arm64',
         'i386': 'i386',
         'x86_64': 'x86_64'
     }
@@ -33,6 +34,7 @@ class iOSTargetTable:
     host_triples = {
         'armv7': 'arm-apple-darwin11',
         'arm64': 'aarch64-apple-darwin11',
+        'arm64-sim': 'aarch64-apple-darwin11',
         'i386': 'i386-apple-darwin11',
         'x86_64': 'x86_64-apple-darwin11'
     }
@@ -40,6 +42,7 @@ class iOSTargetTable:
     osxcross_tool_triples = {
         'armv7': 'arm-apple-darwin11', # TODO: ?
         'arm64': 'arm-apple-darwin11',
+        'arm64-sim': 'arm-apple-darwin11',
         'i386': 'i386-apple-darwin11', # TODO: ?
         'x86_64': 'x86_64-apple-darwin11'
     }
@@ -185,7 +188,7 @@ def setup_ios_simulator_template(env: dict, opts: iOSOpts, target: str):
     if not ios_sysroot_path:
         raise RuntimeError('Cannot find iOS SDK; specify one manually with \'--ios-sdk\'.')
 
-    sysroot_flags = ['-isysroot', ios_sysroot_path, '-miphoneos-version-min=%s' % opts.ios_version_min]
+    sysroot_flags = ['-isysroot', ios_sysroot_path, '-mios-simulator-version-min=%s' % opts.ios_version_min]
 
     arch = iOSTargetTable.archs[target]
     host_triple = iOSTargetTable.host_triples[target]
@@ -306,8 +309,11 @@ class iOSCrossTable:
     }
 
 
-def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: str):
+def llvm_for(host_arch: str) -> str:
+    return 'llvmarm64' if host_arch == 'arm64' else 'llvm64'
 
+
+def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: str):
     target_triple = iOSCrossTable.target_triples[target]
     device_target = iOSCrossTable.device_targets[target]
     offsets_dumper_abi = iOSCrossTable.offsets_dumper_abis[target]
@@ -411,7 +417,7 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
     env['_ios-%s_CONFIGURE_FLAGS' % target] = CONFIGURE_FLAGS
 
     # Runtime cross template
-    runtime.setup_runtime_cross_template(env, opts, 'ios', target, host_triple, target_triple, device_target, 'llvm64', offsets_dumper_abi)
+    runtime.setup_runtime_cross_template(env, opts, 'ios', target, host_triple, target_triple, device_target, llvm_for(host_arch), offsets_dumper_abi)
 
 
 def strip_libs(opts: iOSOpts, product: str, target: str):
@@ -427,8 +433,11 @@ def configure(opts: iOSOpts, product: str, target: str):
     if is_cross(target):
         import llvm
 
-        llvm.make(opts, 'llvm64')
-        setup_ios_cross_template(env, opts, target, host_arch='x86_64')
+        host_arch='x86_64'
+
+        llvm.make(opts, llvm_for(host_arch))
+
+        setup_ios_cross_template(env, opts, target, host_arch)
     else:
         if is_sim:
             setup_ios_simulator_template(env, opts, target)
