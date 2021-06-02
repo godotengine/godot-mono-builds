@@ -11,7 +11,7 @@ from os_utils import *
 # TODO: OSXCROSS
 
 
-target_values = ['llvm32', 'llvm64', 'llvmwin32', 'llvmwin64']
+target_values = ['llvm32', 'llvm64', 'llvmarm64', 'llvmwin32', 'llvmwin64']
 mxe_targets = {
     'llvmwin32': {'arch': 'i686', 'mxe': 'mxe-Win32'},
     'llvmwin64': {'arch': 'x86_64', 'mxe': 'mxe-Win64'}
