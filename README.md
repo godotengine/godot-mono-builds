@@ -36,7 +36,7 @@ export MONO_SOURCE_ROOT=$HOME/git/mono
 
 ### Notes
 - Python 3.7 or higher is required.
-- OSXCROSS is supported expect for building the Mono cross-compilers.
+- OSXCROSS is supported except for building the Mono cross-compilers.
 - Building on Windows is not supported. It's possible to use Cygwin or WSL (Windows Subsystem for Linux) but this hasn't been tested.
 
 ## Compiling Godot for Desktop with this Runtime
