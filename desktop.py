@@ -87,7 +87,8 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
         '--disable-mcs-build',
         '--enable-maintainer-mode',
         '--with-tls=pthread',
-        '--without-ikvm-native'
+        '--without-ikvm-native',
+        '--enable-btls'
     ]
 
     if target_platform == 'windows':
@@ -98,7 +99,6 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
         CONFIGURE_FLAGS += [
             '--disable-iconv',
             '--disable-nls',
-            '--enable-dynamic-btls',
             '--with-sigaltstack=yes',
         ]
 
