@@ -88,7 +88,8 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
         '--enable-maintainer-mode',
         '--with-tls=pthread',
         '--without-ikvm-native',
-        '--enable-btls'
+        '--enable-btls',
+        '--enable-btls-lib'
     ]
 
     if target_platform == 'windows':
@@ -209,6 +210,14 @@ def configure(opts: DesktopOpts, product: str, target_platform: str, target: str
 
 def make(opts: DesktopOpts, product: str, target_platform: str, target: str):
     build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+
+    if target_platform == 'windows':
+        mxe = 'mxe-Win64' if target == 'x86_64' else 'mxe-Win32'
+        replace_in_new_file(
+            src_file='%s/sdks/builds/%s.cmake.in' % (opts.mono_source_root, mxe),
+            search='@MXE_PATH@', replace=opts.mxe_prefix,
+            dst_file='%s/mono/btls/%s.cmake' % (opts.mono_source_root, mxe)
+        )
 
     make_args = make_default_args(opts)
     make_args += ['-C', build_dir]
