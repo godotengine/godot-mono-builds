@@ -11,7 +11,7 @@ While they may work with other versions, you might have issues applying patches 
 
 - Mono: 6.12.0.147.
 - Emscripten: 1.39.9.
-- Android: API level 29.
+- Android: API level 30.
 
 ## Command-line options
 
