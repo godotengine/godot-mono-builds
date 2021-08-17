@@ -104,17 +104,6 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     if target in extra_target_envs:
         env.update(extra_target_envs[target])
 
-    android_new_ndk = True
-
-    with open(path_join(opts.android_ndk_root, 'source.properties')) as file:
-        for line in file:
-            line = line.strip()
-            if line.startswith('Pkg.Revision ') or line.startswith('Pkg.Revision='):
-                pkg_revision = line.split('=')[1].strip()
-                mayor = int(pkg_revision.split('.')[0])
-                android_new_ndk = mayor >= 18
-                break
-
     arch = AndroidTargetTable.archs[target]
     abi_name = AndroidTargetTable.abi_names[target]
     host_triple = AndroidTargetTable.host_triples[target]
@@ -176,14 +165,14 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     CFLAGS += [
         '-fstack-protector',
         '-DMONODROID=1'
+        '-D__ANDROID_API__=' + api,
     ]
-    CFLAGS += ['-D__ANDROID_API__=' + api] if android_new_ndk else []
 
     CXXFLAGS += [
         '-fstack-protector',
         '-DMONODROID=1'
+        '-D__ANDROID_API__=' + api,
     ]
-    CXXFLAGS += ['-D__ANDROID_API__=' + api] if android_new_ndk else []
 
     CPPFLAGS += ['-I%s/sysroot/usr/include' % toolchain_path]
     CXXCPPFLAGS += ['-I%s/sysroot/usr/include' % toolchain_path]
@@ -216,7 +205,7 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     ]
 
     CONFIGURE_FLAGS += ['--enable-monodroid']
-    CONFIGURE_FLAGS += ['--with-btls-android-ndk-asm-workaround'] if android_new_ndk else []
+    CONFIGURE_FLAGS += ['--with-btls-android-ndk-asm-workaround']
 
     CONFIGURE_FLAGS += [
         '--with-btls-android-cmake-toolchain=%s/build/cmake/android.toolchain.cmake' % opts.android_ndk_root,
@@ -524,7 +513,7 @@ def main(raw_args):
     parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
     # Default API version should be in sync with Godot's platform/android/detect.py.
     # Note that `get_api_version_or_min` will upgrade it to 21 for arm64v8 and x86_64.
-    parser.add_argument('--android-api-version', default='18', help=default_help)
+    parser.add_argument('--android-api-version', default='19', help=default_help)
     parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
