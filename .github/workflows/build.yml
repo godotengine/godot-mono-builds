@@ -84,7 +84,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -158,7 +158,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -222,7 +222,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -286,7 +286,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -356,7 +356,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -454,7 +454,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -583,7 +583,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Download LLVM artifact
@@ -670,7 +670,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup Emscripten SDK
@@ -769,7 +769,7 @@ jobs:
           path: godot-mono-builds
       - name: Setup Python
         if: steps.cache_llvm.outputs.cache-hit != 'true'
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -830,7 +830,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v2.2.2
+        uses: actions/setup-python@v2.3.2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
