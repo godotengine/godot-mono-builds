@@ -21,9 +21,8 @@ on:
     branches:
     - 'release/**'
 
-# Use ubuntu-16.04 for the best compatibility.
-# Use ubuntu-latest for the Windows builds because of outdated MinGW headers on ubuntu-16.04.
-# Use ubuntu-latest for the WASM runtime ("machine `wasm32' not recognized" on ubuntu-16.04)
+# Use ubuntu-18.04 for Linux for the best glibc compatibility.
+# Use ubuntu-latest for other platforms.
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
@@ -43,7 +42,7 @@ env:
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         target: [x86, x86_64]
@@ -412,7 +411,7 @@ jobs:
 
   android:
     name: Android
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [armeabi-v7a, arm64-v8a, x86, x86_64]
@@ -491,7 +490,7 @@ jobs:
     strategy:
       matrix:
         target: [cross-arm, cross-arm64, cross-x86, cross-x86_64, cross-arm-win, cross-arm64-win, cross-x86-win, cross-x86_64-win]
-        os: [ubuntu-16.04, ubuntu-latest]
+        os: [ubuntu-18.04, ubuntu-latest]
         exclude:
           - target: cross-arm
             os: ubuntu-latest
@@ -502,30 +501,30 @@ jobs:
           - target: cross-x86_64
             os: ubuntu-latest
           - target: cross-arm-win
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-arm64-win
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-x86-win
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-x86_64-win
-            os: ubuntu-16.04
+            os: ubuntu-18.04
         include:
           - target: cross-arm
             llvm: llvm64
             runtime_target: armeabi-v7a
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-arm64
             llvm: llvm64
             runtime_target: arm64-v8a
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-x86
             llvm: llvm64
             runtime_target: x86
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-x86_64
             llvm: llvm64
             runtime_target: x86_64
-            os: ubuntu-16.04
+            os: ubuntu-18.04
           - target: cross-arm-win
             llvm: llvmwin64
             runtime_target: armeabi-v7a
@@ -709,11 +708,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-16.04, ubuntu-latest, macos-latest]
+        os: [ubuntu-18.04, ubuntu-latest, macos-latest]
         target: [llvm64, llvmwin64]
         exclude:
-          # Ubuntu 16.04 is only needed for the Linux build
-          - os: ubuntu-16.04
+          # Ubuntu 18.04 is only needed for the Linux build
+          - os: ubuntu-18.04
             target: llvmwin64
           # Ubuntu latest is only needed for the Windows build
           - os: ubuntu-latest
@@ -797,7 +796,7 @@ jobs:
 
   bcl:
     name: BCL
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         product: [desktop, desktop-win32, android, ios, wasm]
@@ -865,7 +864,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: [linux, windows, osx, ios, ios-cross, android, android-cross, wasm, bcl]
     name: Create Release
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     outputs:
       release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -894,7 +893,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: create-release
     name: Upload Release Artifacts
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
     strategy:
       matrix:
         artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-x86_64,
