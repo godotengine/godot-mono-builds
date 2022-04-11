@@ -362,7 +362,7 @@ jobs:
         run:
           python3 godot-mono-builds/patch_mono.py
       - name: Download LLVM artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: llvm-${{ matrix.llvm }}-macos-latest
           # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
@@ -586,7 +586,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Download LLVM artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: llvm-${{ matrix.llvm }}-${{ matrix.os }}
           # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
@@ -905,7 +905,7 @@ jobs:
                         bcl-desktop, bcl-desktop-win32, bcl-android, bcl-ios, bcl-wasm]
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: ${{ matrix.artifact_name }}
           path: ./
