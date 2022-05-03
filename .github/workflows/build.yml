@@ -26,7 +26,7 @@ on:
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
-  MONO_TAG: mono-6.12.0.174
+  MONO_TAG: mono-6.12.0.177
   PYTHON_VERSION: 3.9
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
