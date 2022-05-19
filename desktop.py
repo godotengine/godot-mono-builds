@@ -89,12 +89,12 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
         '--with-tls=pthread',
         '--without-ikvm-native',
         '--enable-btls',
+        '--enable-btls-lib'
     ]
 
     if target_platform == 'windows':
         CONFIGURE_FLAGS += [
-            '--with-libgdiplus=%s' % opts.mxe_prefix,
-            '--enable-btls-lib',
+            '--with-libgdiplus=%s' % opts.mxe_prefix
         ]
     else:
         CONFIGURE_FLAGS += [
