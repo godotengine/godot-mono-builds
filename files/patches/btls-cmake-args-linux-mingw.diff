@@ -1,0 +1,33 @@
+diff --git a/configure.ac b/configure.ac
+index 088128e5e74..54693aace64 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -5918,6 +5918,8 @@ if test "x$enable_btls" = "xyes"; then
+ 				if test "x$HAVE_YASM" != "xyes"; then
+ 					BTLS_CMAKE_ARGS="-DOPENSSL_NO_ASM=1"
+ 				fi
++				mono_btls_dir_abs=`cd $srcdir && pwd`/mono/btls
++				BTLS_CMAKE_ARGS="$BTLS_CMAKE_ARGS -DCYGWIN=TRUE -DCMAKE_TOOLCHAIN_FILE=\"$mono_btls_dir_abs/mxe-Win32.cmake\""
+ 				;;
+ 		esac
+ 		;;
+@@ -5929,6 +5931,8 @@ if test "x$enable_btls" = "xyes"; then
+ 				if test "x$HAVE_YASM" != "xyes"; then
+ 					BTLS_CMAKE_ARGS="-DOPENSSL_NO_ASM=1"
+ 				fi
++				mono_btls_dir_abs=`cd $srcdir && pwd`/mono/btls
++				BTLS_CMAKE_ARGS="$BTLS_CMAKE_ARGS -DCYGWIN=TRUE -DCMAKE_TOOLCHAIN_FILE=\"$mono_btls_dir_abs/mxe-Win64.cmake\""
+ 				;;
+ 		esac
+ 		;;
+diff --git a/mono/btls/CMakeLists.txt b/mono/btls/CMakeLists.txt
+index 992f41e4c7f..9946f5d21a4 100644
+--- a/mono/btls/CMakeLists.txt
++++ b/mono/btls/CMakeLists.txt
+@@ -129,4 +129,5 @@ endif ()
+ 
+ if (CYGWIN)
+ 	target_link_libraries (mono-btls-shared wsock32 ws2_32)
++	target_link_options (mono-btls-shared PRIVATE -static-libgcc)
+ endif ()
+\ No newline at end of file
