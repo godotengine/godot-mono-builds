@@ -26,14 +26,14 @@ on:
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
-  MONO_TAG: mono-6.12.0.179
-  PYTHON_VERSION: 3.9
+  MONO_TAG: mono-6.12.0.182
+  PYTHON_VERSION: '3.10'
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
-  ANDROID_CMAKE_VERSION: 3.10.2.4988404
+  ANDROID_CMAKE_VERSION: 3.18.1
   # These should be synced with the Godot repo.
   # platform/android/java/app/config.gradle
-  ANDROID_PLATFORM: android-30
+  ANDROID_PLATFORM: android-32
   ANDROID_API: 19
   ANDROID_NDK_VERSION: 21.4.7075529
   # platform/iphone/detect.py
@@ -83,7 +83,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -157,7 +157,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -221,7 +221,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -285,7 +285,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -355,7 +355,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -453,7 +453,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -582,7 +582,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Download LLVM artifact
@@ -669,7 +669,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup Emscripten SDK
@@ -768,7 +768,7 @@ jobs:
           path: godot-mono-builds
       - name: Setup Python
         if: steps.cache_llvm.outputs.cache-hit != 'true'
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -829,7 +829,7 @@ jobs:
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono

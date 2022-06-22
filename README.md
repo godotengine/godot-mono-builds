@@ -9,9 +9,9 @@ This repository contains scripts for building the Mono runtime to use with Godot
 The scripts are tested against specific versions of the toolchains used by Godot.
 While they may work with other versions, you might have issues applying patches or compiling, so we recommend using the versions below.
 
-- Mono: 6.12.0.179.
+- Mono: 6.12.0.182.
 - Emscripten: 1.39.9.
-- Android: API level 30.
+- Android: API level 32.
 
 ## Command-line options
 
