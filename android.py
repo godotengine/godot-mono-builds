@@ -2,95 +2,71 @@
 
 import os
 import os.path
+import subprocess
 import sys
-
-from os.path import join as path_join
 
 from options import *
 from os_utils import *
 import runtime
 
 
-runtime_targets = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64']
-cross_targets = ['cross-arm', 'cross-arm64', 'cross-x86', 'cross-x86_64']
-cross_mxe_targets = ['cross-arm-win', 'cross-arm64-win', 'cross-x86-win', 'cross-x86_64-win']
+DEFAULT_NDK_VERSION = '23.2.8568313'
+DEFAULT_CMAKE_VERSION = '3.18.1'
+targets = ['armv7', 'arm64v8', 'x86', 'x86_64']
 
 
-def is_cross(target) -> bool:
-    return target in cross_targets or is_cross_mxe(target)
+def get_min_api_version(target) -> str:
+    # Minimum API version should be in sync with Godot's platform/android/detect.py.
+    # Note: The minimum API version for arm64v8 and x86_64 is '21'
+    min_versions = {
+        'armv7': '19',
+        'arm64v8': '21',
+        'x86': '19',
+        'x86_64': '21',
+    }
+    return min_versions[target]
 
 
-def is_cross_mxe(target) -> bool:
-    return target in cross_mxe_targets
+def check_for_android_ndk(opts: AndroidOpts):
+    if not os.path.exists(os.path.join(opts.android_sdk_root, 'ndk', opts.android_ndk_version)):
+        print("Attempting to install Android NDK version %s" % (opts.android_ndk_version))
+        sdkmanager = opts.android_sdk_root + "/cmdline-tools/latest/bin/sdkmanager"
+        if os.path.exists(sdkmanager):
+            sdk_args = "ndk;" + opts.android_ndk_version
+            subprocess.check_call([sdkmanager, sdk_args])
+        else:
+            print("ERROR: Cannot find %s. Please ensure ANDROID_SDK_ROOT is correct and cmdline-tools are installed" % (sdkmanager))
+            sys.exit(1)
 
 
-def android_autodetect_cmake(opts: AndroidOpts) -> str:
-    from distutils.version import LooseVersion
-    from os import listdir
-
-    sdk_cmake_basedir = path_join(opts.android_sdk_root, 'cmake')
-    versions = []
-
-    for entry in listdir(sdk_cmake_basedir):
-        if os.path.isdir(path_join(sdk_cmake_basedir, entry)):
-            try:
-                version = LooseVersion(entry)
-                versions += [version]
-            except ValueError:
-                continue # Not a version folder
-
-    if len(versions) == 0:
-        raise BuildError('Cannot auto-detect Android CMake version')
-
-    lattest_version = str(sorted(versions)[-1])
-    print('Auto-detected Android CMake version: ' + lattest_version)
-
-    return lattest_version
+def check_for_cmake(opts: AndroidOpts):
+    if not os.path.exists(os.path.join(opts.android_sdk_root, 'cmake', opts.android_cmake_version)):
+        print("Attempting to install CMake version %s" % (opts.android_cmake_version))
+        sdkmanager = opts.android_sdk_root + "/cmdline-tools/latest/bin/sdkmanager"
+        if os.path.exists(sdkmanager):
+            sdk_args = "cmake;" + opts.android_cmake_version
+            subprocess.check_call([sdkmanager, sdk_args])
+        else:
+            print("ERROR: Cannot find %s. Please ensure ANDROID_SDK_ROOT is correct and cmdline-tools are installed" % (sdkmanager))
+            sys.exit(1)
 
 
 def get_api_version_or_min(opts: AndroidOpts, target: str) -> str:
-    min_versions = { 'arm64-v8a': '21', 'x86_64': '21' }
-    if target in min_versions and int(opts.android_api_version) < int(min_versions[target]):
-        print('WARNING: %s is less than minimum platform for %s; using %s' % (opts.android_api_version, target, min_versions[target]))
-        return min_versions[target]
+    min_api_version = get_min_api_version(target)
+    if int(opts.android_api_version) < int(min_api_version):
+        print('WARNING: API version %s is less than the minimum for platform %s; using %s' % (opts.android_api_version, target, min_api_version))
+        return min_api_version
     return opts.android_api_version
-
-
-def get_android_cmake_version(opts: AndroidOpts) -> str:
-    return opts.android_cmake_version if opts.android_cmake_version != 'autodetect' else android_autodetect_cmake(opts)
-
-
-class AndroidTargetTable:
-    archs = {
-        'armeabi-v7a': 'arm',
-        'arm64-v8a': 'arm64',
-        'x86': 'x86',
-        'x86_64': 'x86_64'
-    }
-
-    abi_names = {
-        'armeabi-v7a': 'arm-linux-androideabi',
-        'arm64-v8a': 'aarch64-linux-android',
-        'x86': 'i686-linux-android',
-        'x86_64': 'x86_64-linux-android'
-    }
-
-    host_triples = {
-        'armeabi-v7a': 'armv5-linux-androideabi',
-        'arm64-v8a': 'aarch64-linux-android',
-        'x86': 'i686-linux-android',
-        'x86_64': 'x86_64-linux-android'
-    }
 
 
 def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     extra_target_envs = {
-        'armeabi-v7a': {
+        'armv7': {
             'android-armeabi-v7a_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
             'android-armeabi-v7a_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
             'android-armeabi-v7a_LDFLAGS': ['-Wl,--fix-cortex-a8']
         },
-        'arm64-v8a': {
+        'arm64v8': {
             'android-arm64-v8a_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64'],
             'android-arm64-v8a_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64']
         },
@@ -100,44 +76,51 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
             'android-x86_64_CXXFLAGS': ['-DL_cuserid=9']
         }
     }
+    env.update(extra_target_envs[target])
 
-    if target in extra_target_envs:
-        env.update(extra_target_envs[target])
+    if target == "armv7":
+        target_triple = "armv7a-linux-androideabi"
+        bin_utils = "arm-linux-androideabi"
+    elif target == "arm64v8":
+        target_triple = "aarch64-linux-android"
+        bin_utils = target_triple
+    elif target == "x86":
+        target_triple = "i686-linux-android"
+        bin_utils = target_triple
+    elif target == "x86_64":
+        target_triple = "x86_64-linux-android"
+        bin_utils = target_triple
 
-    arch = AndroidTargetTable.archs[target]
-    abi_name = AndroidTargetTable.abi_names[target]
-    host_triple = AndroidTargetTable.host_triples[target]
-    api = env['ANDROID_API_VERSION']
+    if sys.platform.startswith("linux"):
+        host_subpath = "linux-x86_64"
+    elif sys.platform.startswith("darwin"):
+        host_subpath = "darwin-x86_64"
+    elif sys.platform.startswith("win"):
+        if platform.machine().endswith("64"):
+            host_subpath = "windows-x86_64"
+        else:
+            host_subpath = "windows"
 
-    toolchain_path = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
+    cmake_path = os.path.join(opts.android_sdk_root, 'cmake', opts.android_cmake_version, 'bin')
+    ndk_path = os.path.join(opts.android_sdk_root, 'ndk', opts.android_ndk_version)
+    toolchain_path = os.path.join(ndk_path, 'toolchains/llvm/prebuilt', host_subpath)
+    compiler_path = os.path.join(toolchain_path, 'bin')
+    compiler_wrapper = target_triple + env['ANDROID_API_VERSION'] + '-'
+    bin_utils_path = os.path.join(toolchain_path, bin_utils, 'bin')
+    android_api = env['ANDROID_API_VERSION']
 
-    tools_path = path_join(toolchain_path, 'bin')
-    name_fmt = abi_name + '-%s'
-
-    sdk_cmake_dir = path_join(opts.android_sdk_root, 'cmake', get_android_cmake_version(opts))
-    if not os.path.isdir(sdk_cmake_dir):
-        print('Android CMake directory \'%s\' not found' % sdk_cmake_dir)
-
-    AR = path_join(tools_path, name_fmt % 'ar')
-    AS = path_join(tools_path, name_fmt % 'as')
-    CC = path_join(tools_path, name_fmt % 'clang')
-    CXX = path_join(tools_path, name_fmt % 'clang++')
+    AR = os.path.join(compiler_path, 'llvm-ar')
+    AS = os.path.join(bin_utils_path, 'as')
+    CC = os.path.join(compiler_path, compiler_wrapper + 'clang')
+    CXX = os.path.join(compiler_path, compiler_wrapper + 'clang++')
+    LD = os.path.join(compiler_path, 'ld')
     DLLTOOL = ''
-    LD = path_join(tools_path, name_fmt % 'ld')
-    OBJDUMP = path_join(tools_path, name_fmt % 'objdump')
-    RANLIB = path_join(tools_path, name_fmt % 'ranlib')
-    CMAKE = path_join(sdk_cmake_dir, 'bin', 'cmake')
-    STRIP = path_join(tools_path, name_fmt % 'strip')
-
-    CPP = path_join(tools_path, name_fmt % 'cpp')
-    if not os.path.isfile(CPP):
-        CPP = path_join(tools_path, (name_fmt % 'clang'))
-        CPP += ' -E'
-
-    CXXCPP = path_join(tools_path, name_fmt % 'cpp')
-    if not os.path.isfile(CXXCPP):
-        CXXCPP = path_join(tools_path, (name_fmt % 'clang++'))
-        CXXCPP += ' -E'
+    OBJDUMP = os.path.join(compiler_path, 'llvm-objdump')
+    RANLIB = os.path.join(compiler_path, 'llvm-ranlib')
+    CMAKE = os.path.join(cmake_path, 'cmake')
+    STRIP = os.path.join(compiler_path, 'llvm-strip')
+    CPP = CC + ' -E'
+    CXXCPP = CXX + ' -E'
 
     ccache_path = os.environ.get('CCACHE', '')
     if ccache_path:
@@ -165,25 +148,18 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     CFLAGS += [
         '-fstack-protector',
         '-DMONODROID=1'
-        '-D__ANDROID_API__=' + api,
+        '-D__ANDROID_API__=' + android_api
     ]
 
     CXXFLAGS += [
         '-fstack-protector',
         '-DMONODROID=1'
-        '-D__ANDROID_API__=' + api,
+        '-D__ANDROID_API__=' + android_api,
     ]
-
-    CPPFLAGS += ['-I%s/sysroot/usr/include' % toolchain_path]
-    CXXCPPFLAGS += ['-I%s/sysroot/usr/include' % toolchain_path]
-
-    path_link = '%s/platforms/android-%s/arch-%s/usr/lib' % (opts.android_ndk_root, api, arch)
 
     LDFLAGS += [
         '-z', 'now', '-z', 'relro', '-z', 'noexecstack',
-        '-ldl', '-lm', '-llog', '-lc', '-lgcc',
-        '-Wl,-rpath-link=%s,-dynamic-linker=/system/bin/linker' % path_link,
-        '-L' + path_link
+        '-ldl', '-lm', '-llog', '-lc'
     ]
 
     # Fixes this error: DllImport unable to load library 'dlopen failed: empty/missing DT_HASH in "libmono-native.so" (built with --hash-style=gnu?)'.
@@ -200,15 +176,15 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
         '--enable-minimal=ssa,portability,attach,verifier,full_messages,sgen_remset'
                 ',sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par'
                 ',sgen_copying,logging,security,shared_handles,interpreter',
-        '--with-btls-android-ndk=%s' % opts.android_ndk_root,
-        '--with-btls-android-api=%s' % api,
+        '--with-btls-android-ndk=%s' % ndk_path,
+        '--with-btls-android-api=%s' % android_api,
     ]
 
     CONFIGURE_FLAGS += ['--enable-monodroid']
     CONFIGURE_FLAGS += ['--with-btls-android-ndk-asm-workaround']
 
     CONFIGURE_FLAGS += [
-        '--with-btls-android-cmake-toolchain=%s/build/cmake/android.toolchain.cmake' % opts.android_ndk_root,
+        '--with-btls-android-cmake-toolchain=%s/build/cmake/android.toolchain.cmake' % ndk_path,
         '--with-sigaltstack=yes',
         '--with-tls=pthread',
         '--without-ikvm-native',
@@ -239,186 +215,16 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     env['_android-%s_CONFIGURE_FLAGS' % target] = CONFIGURE_FLAGS
 
     # Runtime template
-    runtime.setup_runtime_template(env, opts, 'android', target, host_triple)
+    runtime.setup_runtime_template(env, opts, 'android', target, target_triple)
 
 
-class AndroidCrossTable:
-    target_archs = {
-        'cross-arm': 'armv7',
-        'cross-arm64': 'aarch64-v8a',
-        'cross-x86': 'i686',
-        'cross-x86_64': 'x86_64'
-    }
+def strip_libs(opts: AndroidOpts, product: str, target: str):
+    ndk_path = os.path.join(opts.android_sdk_root, 'ndk', opts.android_ndk_version)
+    toolchain_path = os.path.join(ndk_path, 'toolchains/llvm/prebuilt/linux-x86_64')
+    strip = os.path.join(toolchain_path, 'bin', 'llvm-strip')
 
-    device_targets = {
-        'cross-arm': 'armeabi-v7a',
-        'cross-arm64': 'arm64-v8a',
-        'cross-x86': 'x86',
-        'cross-x86_64': 'x86_64'
-    }
-
-    offsets_dumper_abis = {
-        'cross-arm': 'armv7-none-linux-androideabi',
-        'cross-arm64': 'aarch64-v8a-linux-android',
-        'cross-x86': 'i686-none-linux-android',
-        'cross-x86_64': 'x86_64-none-linux-android'
-    }
-
-
-def get_android_libclang_path(opts):
-    if sys.platform == 'darwin':
-        return '%s/toolchains/llvm/prebuilt/darwin-x86_64/lib64/libclang.dylib' % opts.android_ndk_root
-    elif sys.platform in ['linux', 'linux2']:
-        loc = '%s/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.9svn' % opts.android_ndk_root
-        if os.path.isfile(loc):
-            return loc
-        return '%s/toolchains/llvm/prebuilt/linux-x86_64/lib64/libclang.so.8svn' % opts.android_ndk_root
-    assert False
-
-
-def setup_android_cross_template(env: dict, opts: AndroidOpts, target: str, host_arch: str):
-    def get_host_triple():
-        if sys.platform == 'darwin':
-            return '%s-apple-darwin11' % host_arch
-        elif sys.platform in ['linux', 'linux2']:
-            return '%s-linux-gnu' % host_arch
-        assert False
-
-    target_arch = AndroidCrossTable.target_archs[target]
-    device_target = AndroidCrossTable.device_targets[target]
-    offsets_dumper_abi = AndroidCrossTable.offsets_dumper_abis[target]
-    host_triple = get_host_triple()
-    target_triple = '%s-linux-android' % target_arch
-
-    android_libclang = get_android_libclang_path(opts)
-
-    env['_android-%s_OFFSETS_DUMPER_ARGS' % target] = [
-        '--libclang=%s' % android_libclang,
-        '--sysroot=%s/sysroot' % opts.android_ndk_root
-    ]
-
-    env['_android-%s_AR' % target] = 'ar'
-    env['_android-%s_AS' % target] = 'as'
-    env['_android-%s_CC' % target] = 'cc'
-    env['_android-%s_CXX' % target] = 'c++'
-    env['_android-%s_CXXCPP' % target] = 'cpp'
-    env['_android-%s_LD' % target] = 'ld'
-    env['_android-%s_RANLIB' % target] = 'ranlib'
-    env['_android-%s_STRIP' % target] = 'strip'
-
-    is_darwin = sys.platform == 'darwin'
-
-    CFLAGS = []
-    CFLAGS += ['-DDEBUG_CROSS'] if not opts.release else []
-    CFLAGS += ['-mmacosx-version-min=10.9'] if is_darwin else []
-
-    env['_android-%s_CFLAGS' % target] = CFLAGS
-
-    CXXFLAGS = []
-    CXXFLAGS += ['-DDEBUG_CROSS'] if not opts.release else []
-    CXXFLAGS += ['-mmacosx-version-min=10.9', '-stdlib=libc++'] if is_darwin else []
-
-    env['_android-%s_CXXFLAGS' % target] = CXXFLAGS
-
-    env['_android-%s_CONFIGURE_FLAGS' % target] = [
-        '--disable-boehm',
-        '--disable-mcs-build',
-        '--disable-nls',
-        '--enable-maintainer-mode',
-        '--with-tls=pthread'
-    ]
-
-    # Runtime cross template
-    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvm64', offsets_dumper_abi)
-
-
-def setup_android_cross_mxe_template(env: dict, opts: AndroidOpts, target: str, host_arch: str):
-    table_target = cross_targets[cross_mxe_targets.index(target)] # Re-use the non-mxe table
-
-    target_arch = AndroidCrossTable.target_archs[table_target]
-    device_target = AndroidCrossTable.device_targets[table_target]
-    offsets_dumper_abi = AndroidCrossTable.offsets_dumper_abis[table_target]
-    host_triple = '%s-w64-mingw32' % host_arch
-    target_triple = '%s-linux-android' % target_arch
-
-    android_libclang = get_android_libclang_path(opts)
-
-    env['_android-%s_OFFSETS_DUMPER_ARGS' % target] = [
-        '--libclang=%s' % android_libclang,
-        '--sysroot=%s/sysroot' % opts.android_ndk_root
-    ]
-
-    mxe_bin = path_join(opts.mxe_prefix, 'bin')
-
-    env['_android-%s_PATH' % target] = mxe_bin
-
-    name_fmt = host_arch + '-w64-mingw32-%s'
-
-    env['_android-%s_AR' % target] = path_join(mxe_bin, name_fmt % 'ar')
-    env['_android-%s_AS' % target] = path_join(mxe_bin, name_fmt % 'as')
-    env['_android-%s_CC' % target] = path_join(mxe_bin, name_fmt % 'gcc')
-    env['_android-%s_CXX' % target] = path_join(mxe_bin, name_fmt % 'g++')
-    env['_android-%s_DLLTOOL' % target] = path_join(mxe_bin, name_fmt % 'dlltool')
-    env['_android-%s_LD' % target] = path_join(mxe_bin, name_fmt % 'ld')
-    env['_android-%s_OBJDUMP' % target] = path_join(mxe_bin, name_fmt % 'objdump')
-    env['_android-%s_RANLIB' % target] = path_join(mxe_bin, name_fmt % 'ranlib')
-    env['_android-%s_STRIP' % target] = path_join(mxe_bin, name_fmt % 'strip')
-
-    mingw_zlib_prefix = '%s/opt/mingw-zlib/usr' % opts.mxe_prefix
-    if not os.path.isdir(mingw_zlib_prefix):
-        mingw_zlib_prefix = opts.mxe_prefix
-
-    CFLAGS = []
-    CFLAGS += ['-DDEBUG_CROSS'] if not opts.release else []
-    CFLAGS += ['-I%s/%s-w64-mingw32/include' % (mingw_zlib_prefix, host_arch)]
-
-    env['_android-%s_CFLAGS' % target] = CFLAGS
-
-    CXXFLAGS = []
-    CXXFLAGS += ['-DDEBUG_CROSS'] if not opts.release else []
-    CXXFLAGS += ['-I%s/%s-w64-mingw32/include' % (mingw_zlib_prefix, host_arch)]
-
-    env['_android-%s_CXXFLAGS' % target] = CXXFLAGS
-
-    env['_android-%s_LDFLAGS' % target] = []
-
-    CONFIGURE_FLAGS = [
-        '--disable-boehm',
-        '--disable-mcs-build',
-        '--disable-nls',
-        '--enable-static-gcc-libs',
-        '--enable-maintainer-mode',
-        '--with-tls=pthread'
-    ]
-
-    CONFIGURE_FLAGS += ['--with-static-zlib=%s/%s-w64-mingw32/lib/libz.a' % (mingw_zlib_prefix, host_arch)]
-
-    env['_android-%s_CONFIGURE_FLAGS' % target] = CONFIGURE_FLAGS
-
-    # Runtime cross template
-    runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvmwin64', offsets_dumper_abi)
-
-
-def make_standalone_toolchain(opts: AndroidOpts, target: str, api: str):
-    install_dir = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
-    if os.path.isdir(path_join(install_dir, 'bin')):
-        return # Looks like it's already there, so no need to re-create it
-    command = path_join(opts.android_ndk_root, 'build', 'tools', 'make_standalone_toolchain.py')
-    args = [command, '--verbose', '--force', '--api=' + api, '--arch=' + AndroidTargetTable.archs[target],
-            '--install-dir=' + install_dir]
-    run_command('python3', args=args, name='make_standalone_toolchain')
-
-
-def strip_libs(opts: AndroidOpts, product: str, target: str, api: str):
-    toolchain_path = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
-
-    tools_path = path_join(toolchain_path, 'bin')
-    name_fmt = AndroidTargetTable.abi_names[target] + '-%s'
-
-    strip = path_join(tools_path, name_fmt % 'strip')
-
-    install_dir = path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
-    out_libs_dir = path_join(install_dir, 'lib')
+    install_dir = os.path.join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    out_libs_dir = os.path.join(install_dir, 'lib')
 
     lib_files = globs(('*.a', '*.so'), dirpath=out_libs_dir)
     if len(lib_files):
@@ -428,20 +234,9 @@ def strip_libs(opts: AndroidOpts, product: str, target: str, api: str):
 def configure(opts: AndroidOpts, product: str, target: str):
     env = { 'ANDROID_API_VERSION': get_api_version_or_min(opts, target) }
 
-    if is_cross(target):
-        import llvm
+    setup_android_target_template(env, opts, target)
 
-        if is_cross_mxe(target):
-            llvm.make(opts, 'llvmwin64')
-            setup_android_cross_mxe_template(env, opts, target, host_arch='x86_64')
-        else:
-            llvm.make(opts, 'llvm64')
-            setup_android_cross_template(env, opts, target, host_arch='x86_64')
-    else:
-        make_standalone_toolchain(opts, target, env['ANDROID_API_VERSION'])
-        setup_android_target_template(env, opts, target)
-
-    if not os.path.isfile(path_join(opts.mono_source_root, 'configure')):
+    if not os.path.isfile(os.path.join(opts.mono_source_root, 'configure')):
         runtime.run_autogen(opts)
 
     runtime.run_configure(env, opts, product, target)
@@ -450,7 +245,7 @@ def configure(opts: AndroidOpts, product: str, target: str):
 def make(opts: AndroidOpts, product: str, target: str):
     env = { 'ANDROID_API_VERSION': get_api_version_or_min(opts, target) }
 
-    build_dir = path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
+    build_dir = os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration))
 
     make_args = make_default_args(opts)
     make_args += ['-C', build_dir]
@@ -460,15 +255,15 @@ def make(opts: AndroidOpts, product: str, target: str):
     run_command('make', args=['-C', '%s/support' % build_dir, 'install'], name='make install support')
     run_command('make', args=['-C', '%s/data' % build_dir, 'install'], name='make install data')
 
-    if opts.strip_libs and not is_cross(target):
-        strip_libs(opts, product, target, env['ANDROID_API_VERSION'])
+    if opts.strip_libs:
+        strip_libs(opts, product, target)
 
 
 def clean(opts: AndroidOpts, product: str, target: str):
     rm_rf(
-        path_join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration)),
-        path_join(opts.configure_dir, '%s-%s-%s.config.cache' % (product, target, opts.configuration)),
-        path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
+        os.path.join(opts.configure_dir, '%s-%s-%s' % (product, target, opts.configuration)),
+        os.path.join(opts.configure_dir, '%s-%s-%s.config.cache' % (product, target, opts.configuration)),
+        os.path.join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
     )
 
 
@@ -478,13 +273,7 @@ def main(raw_args):
     from collections import OrderedDict
     from typing import Callable
 
-    target_shortcuts = {
-        'all-runtime': runtime_targets,
-        'all-cross': cross_targets,
-        'all-cross-win': cross_mxe_targets
-    }
-
-    target_values = runtime_targets + cross_targets + cross_mxe_targets + list(target_shortcuts)
+    target_choices = targets + ['all-targets']
 
     actions = OrderedDict()
     actions['configure'] = configure
@@ -493,28 +282,20 @@ def main(raw_args):
 
     parser = cmd_utils.build_arg_parser(
         description='Builds the Mono runtime for Android',
-        env_vars={
-            'ANDROID_SDK_ROOT': 'Overrides default value for --android-sdk',
-            'ANDROID_NDK_ROOT': 'Overrides default value for --android-ndk',
-            'ANDROID_HOME': 'Same as ANDROID_SDK_ROOT'
-        }
+        env_vars={ 'ANDROID_SDK_ROOT': 'Overrides default value for --android-sdk' }
     )
 
     home = os.environ.get('HOME')
-    android_sdk_default = os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', path_join(home, 'Android/Sdk')))
-    android_ndk_default = os.environ.get('ANDROID_NDK_ROOT', path_join(android_sdk_default, 'ndk-bundle'))
+    android_sdk_default = os.environ.get('ANDROID_SDK_ROOT', os.path.join(home, 'Android/Sdk'))
 
     default_help = 'default: %(default)s'
 
     parser.add_argument('action', choices=['configure', 'make', 'clean'])
-    parser.add_argument('--target', choices=target_values, action='append', required=True)
-    parser.add_argument('--toolchains-prefix', default=path_join(home, 'android-toolchains'), help=default_help)
+    parser.add_argument('--target', choices=target_choices, action='append', required=True)
     parser.add_argument('--android-sdk', default=android_sdk_default, help=default_help)
-    parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
-    # Default API version should be in sync with Godot's platform/android/detect.py.
-    # Note that `get_api_version_or_min` will upgrade it to 21 for arm64v8 and x86_64.
-    parser.add_argument('--android-api-version', default='19', help=default_help)
-    parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
+    parser.add_argument('--android-ndk-version', default=DEFAULT_NDK_VERSION, help=default_help)
+    parser.add_argument('--android-api-version', default=get_min_api_version(targets[0]), help=default_help)
+    parser.add_argument('--android-cmake-version', default=DEFAULT_CMAKE_VERSION, help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
 
@@ -529,11 +310,14 @@ def main(raw_args):
         print('Mono sources directory not found: ' + opts.mono_source_root)
         sys.exit(1)
 
-    targets = cmd_utils.expand_input_targets(input_targets, target_shortcuts)
+    check_for_android_ndk(opts)
+    check_for_cmake(opts)
+
+    build_targets = cmd_utils.expand_input_targets(input_targets, { 'all-targets': targets })
     action = actions[input_action]
 
     try:
-        for target in targets:
+        for target in build_targets:
             action(opts, 'android', target)
     except BuildError as e:
         sys.exit(e.message)
