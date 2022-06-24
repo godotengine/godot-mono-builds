@@ -23,12 +23,10 @@ class RuntimeOpts(BaseOpts):
 
 @dataclass
 class AndroidOpts(RuntimeOpts):
-    android_toolchains_prefix: str
     android_sdk_root: str
     android_ndk_root: str
     android_api_version: str
     android_cmake_version: str
-    toolchain_name_fmt: str = '%s-api%s-clang'
 
 
 @dataclass
@@ -80,7 +78,6 @@ def runtime_opts_from_args(args):
 def android_opts_from_args(args):
     return AndroidOpts(
         **vars(runtime_opts_from_args(args)),
-        android_toolchains_prefix = abspath(args.toolchains_prefix),
         android_sdk_root = abspath(args.android_sdk),
         android_ndk_root = abspath(args.android_ndk),
         android_api_version = args.android_api_version,

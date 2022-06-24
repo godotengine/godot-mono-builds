@@ -107,36 +107,37 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     arch = AndroidTargetTable.archs[target]
     abi_name = AndroidTargetTable.abi_names[target]
     host_triple = AndroidTargetTable.host_triples[target]
-    api = env['ANDROID_API_VERSION']
+    api: str = env['ANDROID_API_VERSION']
 
-    toolchain_path = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
+    toolchain_path = path_join(opts.android_ndk_root, 'toolchains/llvm/prebuilt/linux-x86_64')
 
     tools_path = path_join(toolchain_path, 'bin')
-    name_fmt = abi_name + '-%s'
+    name_fmt_with_api = ('armv7a-linux-androideabi' if target == 'armeabi-v7a' else abi_name) + api + '-%s'
+    name_fmt_no_api = abi_name + '-%s'
 
     sdk_cmake_dir = path_join(opts.android_sdk_root, 'cmake', get_android_cmake_version(opts))
     if not os.path.isdir(sdk_cmake_dir):
         print('Android CMake directory \'%s\' not found' % sdk_cmake_dir)
 
-    AR = path_join(tools_path, name_fmt % 'ar')
-    AS = path_join(tools_path, name_fmt % 'as')
-    CC = path_join(tools_path, name_fmt % 'clang')
-    CXX = path_join(tools_path, name_fmt % 'clang++')
+    AR = path_join(tools_path, 'llvm-ar')
+    AS = path_join(tools_path, name_fmt_no_api % 'as')
+    CC = path_join(tools_path, name_fmt_with_api % 'clang')
+    CXX = path_join(tools_path, name_fmt_with_api % 'clang++')
     DLLTOOL = ''
-    LD = path_join(tools_path, name_fmt % 'ld')
-    OBJDUMP = path_join(tools_path, name_fmt % 'objdump')
-    RANLIB = path_join(tools_path, name_fmt % 'ranlib')
+    LD = path_join(tools_path, name_fmt_no_api % 'ld')
+    OBJDUMP = path_join(tools_path, 'llvm-objdump')
+    RANLIB = path_join(tools_path, 'llvm-ranlib')
     CMAKE = path_join(sdk_cmake_dir, 'bin', 'cmake')
-    STRIP = path_join(tools_path, name_fmt % 'strip')
+    STRIP = path_join(tools_path, 'llvm-strip')
 
-    CPP = path_join(tools_path, name_fmt % 'cpp')
+    CPP = path_join(tools_path, name_fmt_with_api % 'cpp')
     if not os.path.isfile(CPP):
-        CPP = path_join(tools_path, (name_fmt % 'clang'))
+        CPP = path_join(tools_path, (name_fmt_with_api % 'clang'))
         CPP += ' -E'
 
-    CXXCPP = path_join(tools_path, name_fmt % 'cpp')
+    CXXCPP = path_join(tools_path, name_fmt_with_api % 'cpp')
     if not os.path.isfile(CXXCPP):
-        CXXCPP = path_join(tools_path, (name_fmt % 'clang++'))
+        CXXCPP = path_join(tools_path, (name_fmt_with_api % 'clang++'))
         CXXCPP += ' -E'
 
     ccache_path = os.environ.get('CCACHE', '')
@@ -181,7 +182,7 @@ def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
 
     LDFLAGS += [
         '-z', 'now', '-z', 'relro', '-z', 'noexecstack',
-        '-ldl', '-lm', '-llog', '-lc', '-lgcc',
+        '-ldl', '-lm', '-llog', '-lc',
         '-Wl,-rpath-link=%s,-dynamic-linker=/system/bin/linker' % path_link,
         '-L' + path_link
     ]
@@ -399,23 +400,12 @@ def setup_android_cross_mxe_template(env: dict, opts: AndroidOpts, target: str, 
     runtime.setup_runtime_cross_template(env, opts, 'android', target, host_triple, target_triple, device_target, 'llvmwin64', offsets_dumper_abi)
 
 
-def make_standalone_toolchain(opts: AndroidOpts, target: str, api: str):
-    install_dir = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
-    if os.path.isdir(path_join(install_dir, 'bin')):
-        return # Looks like it's already there, so no need to re-create it
-    command = path_join(opts.android_ndk_root, 'build', 'tools', 'make_standalone_toolchain.py')
-    args = [command, '--verbose', '--force', '--api=' + api, '--arch=' + AndroidTargetTable.archs[target],
-            '--install-dir=' + install_dir]
-    run_command('python3', args=args, name='make_standalone_toolchain')
-
-
 def strip_libs(opts: AndroidOpts, product: str, target: str, api: str):
-    toolchain_path = path_join(opts.android_toolchains_prefix, opts.toolchain_name_fmt % (target, api))
+    toolchain_path = path_join(opts.android_ndk_root, 'toolchains/llvm/prebuilt/linux-x86_64')
 
     tools_path = path_join(toolchain_path, 'bin')
-    name_fmt = AndroidTargetTable.abi_names[target] + '-%s'
 
-    strip = path_join(tools_path, name_fmt % 'strip')
+    strip = path_join(tools_path, 'llvm-strip')
 
     install_dir = path_join(opts.install_dir, '%s-%s-%s' % (product, target, opts.configuration))
     out_libs_dir = path_join(install_dir, 'lib')
@@ -438,7 +428,6 @@ def configure(opts: AndroidOpts, product: str, target: str):
             llvm.make(opts, 'llvm64')
             setup_android_cross_template(env, opts, target, host_arch='x86_64')
     else:
-        make_standalone_toolchain(opts, target, env['ANDROID_API_VERSION'])
         setup_android_target_template(env, opts, target)
 
     if not os.path.isfile(path_join(opts.mono_source_root, 'configure')):
@@ -502,18 +491,17 @@ def main(raw_args):
 
     home = os.environ.get('HOME')
     android_sdk_default = os.environ.get('ANDROID_HOME', os.environ.get('ANDROID_SDK_ROOT', path_join(home, 'Android/Sdk')))
-    android_ndk_default = os.environ.get('ANDROID_NDK_ROOT', path_join(android_sdk_default, 'ndk-bundle'))
+    android_ndk_default = os.environ.get('ANDROID_NDK_ROOT', '')
 
     default_help = 'default: %(default)s'
 
     parser.add_argument('action', choices=['configure', 'make', 'clean'])
     parser.add_argument('--target', choices=target_values, action='append', required=True)
-    parser.add_argument('--toolchains-prefix', default=path_join(home, 'android-toolchains'), help=default_help)
     parser.add_argument('--android-sdk', default=android_sdk_default, help=default_help)
     parser.add_argument('--android-ndk', default=android_ndk_default, help=default_help)
     # Default API version should be in sync with Godot's platform/android/detect.py.
     # Note that `get_api_version_or_min` will upgrade it to 21 for arm64v8 and x86_64.
-    parser.add_argument('--android-api-version', default='19', help=default_help)
+    parser.add_argument('--android-api-version', default='24', help=default_help)
     parser.add_argument('--android-cmake-version', default='autodetect', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
@@ -527,6 +515,22 @@ def main(raw_args):
 
     if not os.path.isdir(opts.mono_source_root):
         print('Mono sources directory not found: ' + opts.mono_source_root)
+        sys.exit(1)
+
+    if not opts.android_sdk_root:
+        print('Please specify the location of the Android SDK (\'--android-sdk\')')
+        sys.exit(1)
+
+    if not os.path.isdir(opts.android_sdk_root):
+        print('Android SDK directory not found: ' + opts.android_sdk_root)
+        sys.exit(1)
+
+    if not opts.android_ndk_root:
+        print('Please specify the location of the Android NDK (\'--android-ndk\')')
+        sys.exit(1)
+
+    if not opts.android_ndk_root or not os.path.isdir(opts.android_ndk_root):
+        print('Android NDK directory not found: ' + opts.android_ndk_root)
         sys.exit(1)
 
     targets = cmd_utils.expand_input_targets(input_targets, target_shortcuts)

@@ -75,7 +75,7 @@ _AOT cross-compilers for desktop platforms cannot be built with these scripts ye
 ```bash
 # These are the default values. This step can be omitted if SDK and NDK root are in this location.
 export ANDROID_SDK_ROOT=$HOME/Android/Sdk
-export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle
+export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_VERSION
 
 # Build the runtime for all supported Android ABIs.
 ./android.py configure --target=all-runtime
