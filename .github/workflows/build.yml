@@ -30,12 +30,6 @@ env:
   PYTHON_VERSION: '3.10'
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
-  ANDROID_CMAKE_VERSION: 3.18.1
-  # These should be synced with the Godot repo.
-  # platform/android/java/app/config.gradle
-  ANDROID_PLATFORM: android-32
-  ANDROID_API: 19
-  ANDROID_NDK_VERSION: 21.4.7075529
   # platform/iphone/detect.py
   IOS_VERSION_MIN: 10.0
 
@@ -414,24 +408,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [armeabi-v7a, arm64-v8a, x86, x86_64]
+        target: [armv7, arm64v8, x86, x86_64]
     steps:
       - name: Set Environment Variables
         run: |
+          env
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
           sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
-          sudo apt-get -y install snapd
-      - name: Install Android SDK Manager
-        run: |
-          sudo snap install androidsdk
-          androidsdk "platforms;${ANDROID_PLATFORM}"
-          androidsdk "ndk;${ANDROID_NDK_VERSION}"
-          androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
-          echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v3
@@ -461,10 +447,10 @@ jobs:
           python3 godot-mono-builds/patch_mono.py
       - name: Configure
         run:
-          python3 godot-mono-builds/android.py configure --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+          python3 godot-mono-builds/android.py configure --target=${{ matrix.target }} -j 2
       - name: Make
         run:
-          python3 godot-mono-builds/android.py make --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
+          python3 godot-mono-builds/android.py make --target=${{ matrix.target }} -j 2
       - name: Compress Output
         run: |
           mkdir -p $HOME/mono-installs-artifacts
@@ -477,157 +463,6 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: android-${{ matrix.target }}-config.log
-          path: ~/mono-configs/android-${{ matrix.target }}-release/config.log
-
-  android-cross:
-    needs: llvm
-    name: Android Cross-compiler
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        target: [cross-arm, cross-arm64, cross-x86, cross-x86_64, cross-arm-win, cross-arm64-win, cross-x86-win, cross-x86_64-win]
-        os: [ubuntu-18.04, ubuntu-latest]
-        exclude:
-          - target: cross-arm
-            os: ubuntu-latest
-          - target: cross-arm64
-            os: ubuntu-latest
-          - target: cross-x86
-            os: ubuntu-latest
-          - target: cross-x86_64
-            os: ubuntu-latest
-          - target: cross-arm-win
-            os: ubuntu-18.04
-          - target: cross-arm64-win
-            os: ubuntu-18.04
-          - target: cross-x86-win
-            os: ubuntu-18.04
-          - target: cross-x86_64-win
-            os: ubuntu-18.04
-        include:
-          - target: cross-arm
-            llvm: llvm64
-            runtime_target: armeabi-v7a
-            os: ubuntu-18.04
-          - target: cross-arm64
-            llvm: llvm64
-            runtime_target: arm64-v8a
-            os: ubuntu-18.04
-          - target: cross-x86
-            llvm: llvm64
-            runtime_target: x86
-            os: ubuntu-18.04
-          - target: cross-x86_64
-            llvm: llvm64
-            runtime_target: x86_64
-            os: ubuntu-18.04
-          - target: cross-arm-win
-            llvm: llvmwin64
-            runtime_target: armeabi-v7a
-            os: ubuntu-latest
-          - target: cross-arm64-win
-            llvm: llvmwin64
-            runtime_target: arm64-v8a
-            os: ubuntu-latest
-          - target: cross-x86-win
-            llvm: llvmwin64
-            runtime_target: x86
-            os: ubuntu-latest
-          - target: cross-x86_64-win
-            llvm: llvmwin64
-            runtime_target: x86_64
-            os: ubuntu-latest
-    steps:
-      - name: Set Environment Variables
-        run: |
-          echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
-      - name: Install Dependencies
-        run: |
-          sudo apt-get -y update
-          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
-      - name: Install Dependencies (Targeting Windows)
-        if: matrix.llvm == 'llvmwin64'
-        run: |
-          sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
-      - name: Install Android SDK Manager
-        run: |
-          sudo apt-get -y install snapd
-          sudo snap install androidsdk
-          androidsdk "ndk;${ANDROID_NDK_VERSION}"
-          androidsdk "cmake;${ANDROID_CMAKE_VERSION}"
-          echo "ANDROID_SDK_ROOT=$HOME/snap/androidsdk/current/" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$ANDROID_NDK_VERSION" >> $GITHUB_ENV
-      - name: Cache Mono Sources
-        id: cache_mono_sources
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.MONO_SOURCE_ROOT }}
-          key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
-      - name: Checkout Mono Sources
-        if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
-        with:
-          repository: mono/mono
-          ref: ${{ env.MONO_TAG }}
-          submodules: true
-          path: ${{ env.MONO_SOURCE_ROOT }}
-      - name: Clean Mono
-        run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          path: godot-mono-builds
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Download LLVM artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: llvm-${{ matrix.llvm }}-${{ matrix.os }}
-          # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
-          # File permissions are also messed up: https://github.com/actions/upload-artifact/issues/38
-          # We have to manually move the folder and restore the file permissions in the next step.
-          path: ./llvm-${{ matrix.llvm }}
-      - name: Stamp LLVM
-        run: |
-          mkdir -p $HOME/mono-installs/ && mv ./llvm-${{ matrix.llvm }} $HOME/mono-installs/
-          chmod 755 $HOME/mono-installs/llvm-${{ matrix.llvm }}/bin/*
-          mkdir -p $HOME/mono-configs/ && touch $HOME/mono-configs/.stamp-${{ matrix.llvm }}-make
-      - name: Patch Mono
-        run:
-          python3 godot-mono-builds/patch_mono.py
-      - name: Configure Runtime
-        run:
-          python3 godot-mono-builds/android.py configure --target=${{ matrix.runtime_target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
-      - name: Configure
-        run:
-          python3 godot-mono-builds/android.py configure --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
-      - name: Make
-        run:
-          python3 godot-mono-builds/android.py make --target=${{ matrix.target }} -j 2 --android-api-version=${ANDROID_API} --android-cmake-version=${ANDROID_CMAKE_VERSION}
-      - name: Compress Output
-        run: |
-          mkdir -p $HOME/mono-installs-artifacts
-          (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/android-${{ matrix.target }}.zip android-${{ matrix.target }}-release)
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: android-${{ matrix.target }}
-          path: ~/mono-installs-artifacts/android-${{ matrix.target }}.zip
-      - name: Clean Mono
-        run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
-      - name: Upload Runtime config.log After Error
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: android-${{ matrix.target }}-runtime-config.log
-          path: ~/mono-configs/android-${{ matrix.runtime_target }}-release/config.log
-      - name: Upload Cross config.log After Error
         if: ${{ failure() }}
         uses: actions/upload-artifact@v3
         with:
@@ -862,7 +697,7 @@ jobs:
 
   create-release:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
-    needs: [linux, windows, osx, ios, ios-cross, android, android-cross, wasm, bcl]
+    needs: [linux, windows, osx, ios, ios-cross, android, wasm, bcl]
     name: Create Release
     runs-on: ubuntu-18.04
     outputs:
@@ -883,8 +718,6 @@ jobs:
             Mono Version: ${{ env.MONO_TAG }}
 
             EMSDK Version: ${{ env.EMSDK_VERSION }}
-            Android Platform: ${{ env.ANDROID_PLATFORM }}
-            Android API: ${{ env.ANDROID_API }}
             iOS Min Version: ${{ env.IOS_VERSION_MIN }}
           draft: false
           prerelease: false
@@ -899,8 +732,6 @@ jobs:
         artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-x86_64,
                         ios-arm64, ios-x86_64, ios-cross-arm64,
                         android-armeabi-v7a, android-arm64-v8a, android-x86, android-x86_64,
-                        android-cross-arm, android-cross-arm64, android-cross-x86, android-cross-x86_64,
-                        android-cross-arm-win, android-cross-arm64-win, android-cross-x86-win, android-cross-x86_64-win,
                         wasm-runtime, wasm-runtime-threads,
                         bcl-desktop, bcl-desktop-win32, bcl-android, bcl-ios, bcl-wasm]
     steps:

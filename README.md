@@ -11,7 +11,7 @@ While they may work with other versions, you might have issues applying patches 
 
 - Mono: 6.12.0.182.
 - Emscripten: 1.39.9.
-- Android: API level 32.
+- Android NDK: 23.2.8568313
 
 ## Command-line options
 
@@ -72,25 +72,18 @@ _AOT cross-compilers for desktop platforms cannot be built with these scripts ye
 
 ## Android
 
+Building for Android requires the Android SDK cmdline-tools to be installed in the Android SDK folder.
+
 ```bash
-# These are the default values. This step can be omitted if SDK and NDK root are in this location.
+# The default location for the Android SDK is $HOME/Android/Sdk. This step can be omitted if SDK is in this location.
 export ANDROID_SDK_ROOT=$HOME/Android/Sdk
-export ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk-bundle
 
 # Build the runtime for all supported Android ABIs.
-./android.py configure --target=all-runtime
-./android.py make --target=all-runtime
-
-# Build the AOT cross-compilers targeting all supported Android ABIs.
-./android.py configure --target=all-cross
-./android.py make --target=all-cross
-
-# Build the AOT cross-compilers for Windows targeting all supported Android ABIs.
-./android.py configure --target=all-cross-win --mxe-prefix=/usr
-./android.py make --target=all-cross-win --mxe-prefix=/usr
+./android.py configure --target=all-targets
+./android.py make --target=all-targets
 ```
 
-The option `--target=all-runtime` is a shortcut for `--target=armeabi-v7a --target=x86 --target=arm64-v8a --target=x86_64`. The equivalent applies for `all-cross` and `all-cross-win`.
+The option `--target=all-targets` is a shortcut for `--target=armv7 --target=arm64v8 --target=x86 --target=x86_64`.
 
 # iOS
 
