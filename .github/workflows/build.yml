@@ -186,7 +186,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        target: [x86_64]
+        target: [arm64, x86_64]
     steps:
       - name: Set Environment Variables
         run: |
@@ -729,7 +729,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-x86_64,
+        artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-arm64, osx-x86_64,
                         ios-arm64, ios-x86_64, ios-cross-arm64,
                         android-armv7, android-arm64v8, android-x86, android-x86_64,
                         wasm-runtime, wasm-runtime-threads,
