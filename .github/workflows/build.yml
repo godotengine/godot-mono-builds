@@ -21,9 +21,6 @@ on:
     branches:
     - 'release/**'
 
-# Use ubuntu-18.04 for Linux for the best glibc compatibility.
-# Use ubuntu-latest for other platforms.
-
 env:
   # Use SHA or tag instead of the branch for caching purposes.
   MONO_TAG: mono-6.12.0.182
@@ -36,7 +33,7 @@ env:
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         target: [x86, x86_64]
@@ -44,18 +41,36 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
-      - name: Install Dependencies (x86)
-        if: matrix.target == 'x86'
+      - name: Install Dependencies
         run: |
-          sudo dpkg --add-architecture i386
           sudo apt-get -y update
-          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
-          sudo apt-get -y install gcc-multilib g++-multilib zlib1g-dev:i386
-      - name: Install Dependencies (x86_64)
+          sudo apt-get -y install git autoconf libtool libtool-bin automake gettext cmake python3 curl
+      - name: Install Linux SDK (x86_64)
         if: matrix.target == 'x86_64'
         run: |
-          sudo apt-get -y update
-          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          cd /home/runner
+          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          cd x86_64-godot-linux-gnu_sdk-buildroot
+          ./relocate-sdk.sh
+          cd bin
+          rm -f {aclocal*,auto*,libtool*,m4}
+          for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
+          echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
+      - name: Install Linux SDK (x86)
+        if: matrix.target == 'x86'
+        run: |
+          cd /home/runner
+          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/i686-godot-linux-gnu_sdk-buildroot.tar.bz2
+          tar xf i686-godot-linux-gnu_sdk-buildroot.tar.bz2
+          rm -f i686-godot-linux-gnu_sdk-buildroot.tar.bz2
+          cd i686-godot-linux-gnu_sdk-buildroot
+          ./relocate-sdk.sh
+          cd bin
+          rm -f {aclocal*,auto*,libtool*,m4}
+          for file in i686-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
+          echo "PATH=/home/runner/i686-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v3
@@ -543,15 +558,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         target: [llvm64, llvmwin64]
         exclude:
-          # Ubuntu 18.04 is only needed for the Linux build
-          - os: ubuntu-18.04
-            target: llvmwin64
-          # Ubuntu latest is only needed for the Windows build
-          - os: ubuntu-latest
-            target: llvm64
           # We already build for Windows on ubuntu-latest
           - os: macos-latest
             target: llvmwin64
@@ -569,7 +578,20 @@ jobs:
         if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux'
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install git autoconf libtool libtool-bin automake gettext cmake python3 curl
+      - name: Install Linux SDK (x86_64)
+        if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux'
+        run: |
+          cd /home/runner
+          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          cd x86_64-godot-linux-gnu_sdk-buildroot
+          ./relocate-sdk.sh
+          cd bin
+          rm -f {aclocal*,auto*,libtool*,m4}
+          for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
+          echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Install Dependencies (Linux Targeting Windows)
         if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux' && matrix.target == 'llvmwin64'
         run: |
@@ -631,7 +653,7 @@ jobs:
 
   bcl:
     name: BCL
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         product: [desktop, desktop-win32, android, ios, wasm]
@@ -642,7 +664,19 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get -y update
-          sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
+          sudo apt-get -y install git autoconf libtool libtool-bin automake gettext cmake python3 curl
+      - name: Install Linux SDK (x86_64)
+        run: |
+          cd /home/runner
+          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          cd x86_64-godot-linux-gnu_sdk-buildroot
+          ./relocate-sdk.sh
+          cd bin
+          rm -f {aclocal*,auto*,libtool*,m4}
+          for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
+          echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
         uses: actions/cache@v3
