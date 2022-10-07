@@ -731,7 +731,7 @@ jobs:
       matrix:
         artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-x86_64,
                         ios-arm64, ios-x86_64, ios-cross-arm64,
-                        android-armeabi-v7a, android-arm64-v8a, android-x86, android-x86_64,
+                        android-armv7, android-arm64v8, android-x86, android-x86_64,
                         wasm-runtime, wasm-runtime-threads,
                         bcl-desktop, bcl-desktop-win32, bcl-android, bcl-ios, bcl-wasm]
     steps:
