@@ -1,0 +1,59 @@
+diff --git a/configure.ac b/configure.ac
+index 088128e5e74..235acfe9181 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4921,9 +4921,6 @@ if test "x$target_mach" = "xyes"; then
+           CPPFLAGS_FOR_LIBGC="$CPPFLAGS_FOR_LIBGC -DTARGET_OSX"
+           CFLAGS_FOR_LIBGC="$CFLAGS_FOR_LIBGC -DTARGET_OSX"
+           target_osx=yes
+-          if test "x$TARGET" = "xARM64"; then
+-             BTLS_SUPPORTED=no
+-          fi
+        ], [
+           AC_DEFINE(TARGET_IOS,1,[The JIT/AOT targets iOS])
+           CPPFLAGS_FOR_LIBGC="$CPPFLAGS_FOR_LIBGC -DTARGET_IOS"
+@@ -5942,7 +5939,11 @@ if test "x$enable_btls" = "xyes"; then
+ 		;;
+ 	aarch64)
+ 		btls_arch=aarch64
+-		btls_cflags="-march=armv8-a+crypto"
++		if test "x$target_mach" = "xyes"; then
++			btls_cflags="-arch arm64"
++		else
++			btls_cflags="-march=armv8-a+crypto"
++		fi
+ 		;;
+ 	s390x)
+ 		btls_arch=s390x
+diff --git a/mono/btls/CMakeLists.txt b/mono/btls/CMakeLists.txt
+index 992f41e4c7f..ee3e956c5b0 100644
+--- a/mono/btls/CMakeLists.txt
++++ b/mono/btls/CMakeLists.txt
+@@ -21,6 +21,15 @@ if (MSVC OR CYGWIN)
+ 	set(BTLS_HOST_WIN32 1)
+ endif ()
+ 
++if (NOT "${BTLS_ARCH}" STREQUAL "")
++	message (STATUS "SET ARCH: ${BTLS_ARCH}")
++	set (CMAKE_SYSTEM_PROCESSOR "${BTLS_ARCH}")
++endif ()
++
++if ((("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "arm64") OR ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")) AND APPLE AND NOT IOS)
++	set(OPENSSL_NO_ASM 1)
++endif ()
++
+ if (NOT OPENSSL_NO_ASM)
+ 	if (BTLS_HOST_WIN32)
+ 		if (CYGWIN AND "${BTLS_ARCH}" STREQUAL "i386")
+@@ -38,11 +47,6 @@ if (NOT OPENSSL_NO_ASM)
+ 	endif ()
+ endif ()
+ 
+-if (NOT "${BTLS_ARCH}" STREQUAL "")
+-	message (STATUS "SET ARCH: ${BTLS_ARCH}")
+-	set (CMAKE_SYSTEM_PROCESSOR "${BTLS_ARCH}")
+-endif ()
+-
+ if (NOT MSVC)
+ 	if(${CMAKE_SYSTEM_NAME} MATCHES "AIX" OR ${CMAKE_SYSTEM_NAME} MATCHES "OS400")
+ 		# GCC+XCOFF doesn't support -fvisibility=hidden, and we would prefer XCOFF debugging info.
