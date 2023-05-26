@@ -35,6 +35,7 @@ def main(raw_args):
         'btls-cmake-args-linux-mingw.diff',
         'btls-cmake-arm64.diff',
         'xcode_13_14_fix.diff',
+        'mono-linux-disable-mmap-MAP_32BIT.diff',
     ]
 
     if os.path.isfile(os.path.join(mono_source_root, 'mono/tools/offsets-tool/offsets-tool.py')):
