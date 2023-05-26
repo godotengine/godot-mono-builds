@@ -1,5 +1,5 @@
 diff --git a/mono/utils/mono-log-darwin.c b/mono/utils/mono-log-darwin.c
-index 3cb127bad59..30ff5edc307 100644
+index 2cb41b1481e..4f566ddb90a 100644
 --- a/mono/utils/mono-log-darwin.c
 +++ b/mono/utils/mono-log-darwin.c
 @@ -5,7 +5,8 @@

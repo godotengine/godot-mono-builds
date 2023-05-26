@@ -23,8 +23,8 @@ on:
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
-  MONO_TAG: mono-6.12.0.182
-  PYTHON_VERSION: '3.10'
+  MONO_TAG: mono-6.12.0.198
+  PYTHON_VERSION: '3.11'
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
   # platform/iphone/detect.py
@@ -523,7 +523,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup Emscripten SDK
-        uses: mymindstorm/setup-emsdk@v11
+        uses: mymindstorm/setup-emsdk@v12
         with:
           version: ${{ env.EMSDK_VERSION }}
       - name: Patch Mono
@@ -733,7 +733,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: [linux, windows, osx, ios, ios-cross, android, wasm, bcl]
     name: Create Release
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     outputs:
       release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -760,7 +760,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: create-release
     name: Upload Release Artifacts
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-arm64, osx-x86_64,

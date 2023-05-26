@@ -1,8 +1,8 @@
 diff --git a/mono/metadata/threads.c b/mono/metadata/threads.c
-index ad9b8823f8f..3542b32b540 100644
+index 8d6753f2e01..1c1bd460123 100644
 --- a/mono/metadata/threads.c
 +++ b/mono/metadata/threads.c
-@@ -77,8 +77,12 @@ mono_native_thread_join_handle (HANDLE thread_handle, gboolean close_handle);
+@@ -78,8 +78,12 @@ mono_native_thread_join_handle (HANDLE thread_handle, gboolean close_handle);
  #include <zircon/syscalls.h>
  #endif
  
@@ -18,10 +18,10 @@ index ad9b8823f8f..3542b32b540 100644
  
  #ifdef HOST_ANDROID
 diff --git a/mono/utils/mono-threads-posix.c b/mono/utils/mono-threads-posix.c
-index 3e4bf93de5f..79c9f731fe7 100644
+index cd32e6b042d..5e2fd4618b8 100644
 --- a/mono/utils/mono-threads-posix.c
 +++ b/mono/utils/mono-threads-posix.c
-@@ -31,8 +31,12 @@
+@@ -32,8 +32,12 @@
  
  #include <errno.h>
  

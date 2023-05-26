@@ -1,16 +1,16 @@
 diff --git a/mono/metadata/threadpool-io.c b/mono/metadata/threadpool-io.c
-index fdfef2de91e28..45ac0d84b2429 100644
+index a8a947e7dea..b87b59ed5b6 100644
 --- a/mono/metadata/threadpool-io.c
 +++ b/mono/metadata/threadpool-io.c
-@@ -180,6 +180,7 @@ selector_thread_wakeup_drain_pipes (void)
+@@ -179,6 +179,7 @@ selector_thread_wakeup_drain_pipes (void)
  {
  	gchar buffer [128];
  	gint received;
 +	static gint warnings_issued = 0;
-
+ 
  	for (;;) {
  #if !defined(HOST_WIN32)
-@@ -192,11 +193,16 @@ selector_thread_wakeup_drain_pipes (void)
+@@ -191,11 +192,16 @@ selector_thread_wakeup_drain_pipes (void)
  			 * some unices (like AIX) send ERESTART, which doesn't
  			 * exist on some other OSes errno
  			 */
@@ -30,7 +30,7 @@ index fdfef2de91e28..45ac0d84b2429 100644
  			break;
  		}
  #else
-@@ -204,8 +210,13 @@ selector_thread_wakeup_drain_pipes (void)
+@@ -203,8 +209,13 @@ selector_thread_wakeup_drain_pipes (void)
  		if (received == 0)
  			break;
  		if (received == SOCKET_ERROR) {

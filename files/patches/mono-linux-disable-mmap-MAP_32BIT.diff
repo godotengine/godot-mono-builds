@@ -14,17 +14,17 @@ Reference: https://lore.kernel.org/all/20230414185919.4175572-1-Liam.Howlett@ora
  2 files changed, 6 deletions(-)
 
 diff --git a/mono/mini/mini-amd64.h b/mono/mini/mini-amd64.h
-index b321743b67d..0a81bb4bd6b 100644
+index a5c03c4877c..536a79ef59d 100644
 --- a/mono/mini/mini-amd64.h
 +++ b/mono/mini/mini-amd64.h
 @@ -390,9 +390,7 @@ typedef struct {
-
+ 
  #endif /* !HOST_WIN32 */
-
+ 
 -#if !defined(__linux__)
  #define MONO_ARCH_NOMAP32BIT 1
 -#endif
-
+ 
  #ifdef TARGET_WIN32
  #define MONO_AMD64_ARG_REG1 AMD64_RCX
 diff --git a/mono/utils/mono-codeman.c b/mono/utils/mono-codeman.c
@@ -34,14 +34,14 @@ index 234aac4b0ca..5eccda92bd0 100644
 @@ -68,11 +68,7 @@ static const MonoCodeManagerCallbacks *code_manager_callbacks;
  #define MAX_WASTAGE 32
  #define MIN_BSIZE 32
-
+ 
 -#ifdef __x86_64__
 -#define ARCH_MAP_FLAGS MONO_MMAP_32BIT
 -#else
  #define ARCH_MAP_FLAGS 0
 -#endif
-
+ 
  #define MONO_PROT_RWX (MONO_MMAP_READ|MONO_MMAP_WRITE|MONO_MMAP_EXEC|MONO_MMAP_JIT)
-
+ 
 --
 2.40.1

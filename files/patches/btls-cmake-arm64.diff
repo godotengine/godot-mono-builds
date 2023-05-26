@@ -1,8 +1,8 @@
 diff --git a/configure.ac b/configure.ac
-index 088128e5e74..235acfe9181 100644
+index d07afde5e05..2c052530f2c 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4921,9 +4921,6 @@ if test "x$target_mach" = "xyes"; then
+@@ -4927,9 +4927,6 @@ if test "x$target_mach" = "xyes"; then
            CPPFLAGS_FOR_LIBGC="$CPPFLAGS_FOR_LIBGC -DTARGET_OSX"
            CFLAGS_FOR_LIBGC="$CFLAGS_FOR_LIBGC -DTARGET_OSX"
            target_osx=yes
@@ -12,7 +12,7 @@ index 088128e5e74..235acfe9181 100644
         ], [
            AC_DEFINE(TARGET_IOS,1,[The JIT/AOT targets iOS])
            CPPFLAGS_FOR_LIBGC="$CPPFLAGS_FOR_LIBGC -DTARGET_IOS"
-@@ -5942,7 +5939,11 @@ if test "x$enable_btls" = "xyes"; then
+@@ -5952,7 +5949,11 @@ if test "x$enable_btls" = "xyes"; then
  		;;
  	aarch64)
  		btls_arch=aarch64
@@ -26,7 +26,7 @@ index 088128e5e74..235acfe9181 100644
  	s390x)
  		btls_arch=s390x
 diff --git a/mono/btls/CMakeLists.txt b/mono/btls/CMakeLists.txt
-index 992f41e4c7f..ee3e956c5b0 100644
+index 9946f5d21a4..a8aa3d07b0e 100644
 --- a/mono/btls/CMakeLists.txt
 +++ b/mono/btls/CMakeLists.txt
 @@ -21,6 +21,15 @@ if (MSVC OR CYGWIN)

@@ -1,8 +1,8 @@
 diff --git a/configure.ac b/configure.ac
-index 088128e5e74..54693aace64 100644
+index 19b20127ca2..d07afde5e05 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -5918,6 +5918,8 @@ if test "x$enable_btls" = "xyes"; then
+@@ -5924,6 +5924,8 @@ if test "x$enable_btls" = "xyes"; then
  				if test "x$HAVE_YASM" != "xyes"; then
  					BTLS_CMAKE_ARGS="-DOPENSSL_NO_ASM=1"
  				fi
@@ -11,7 +11,7 @@ index 088128e5e74..54693aace64 100644
  				;;
  		esac
  		;;
-@@ -5929,6 +5931,8 @@ if test "x$enable_btls" = "xyes"; then
+@@ -5935,6 +5937,8 @@ if test "x$enable_btls" = "xyes"; then
  				if test "x$HAVE_YASM" != "xyes"; then
  					BTLS_CMAKE_ARGS="-DOPENSSL_NO_ASM=1"
  				fi

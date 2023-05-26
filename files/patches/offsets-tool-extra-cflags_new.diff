@@ -1,5 +1,5 @@
 diff --git a/mono/tools/offsets-tool/offsets-tool.py b/mono/tools/offsets-tool/offsets-tool.py
-index 35445ba585c..d1586ee5ecd 100644
+index f06799cba12..adf7eb4bbd6 100644
 --- a/mono/tools/offsets-tool/offsets-tool.py
 +++ b/mono/tools/offsets-tool/offsets-tool.py
 @@ -54,6 +54,7 @@ class OffsetsTool:

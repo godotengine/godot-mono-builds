@@ -1,10 +1,10 @@
 diff --git a/mono/mini/debugger-agent.c b/mono/mini/debugger-agent.c
-index df6329391df..05f30d5b4dc 100644
+index 32bfc471ea2..5087405eed5 100644
 --- a/mono/mini/debugger-agent.c
 +++ b/mono/mini/debugger-agent.c
-@@ -4088,8 +4088,12 @@ thread_startup (MonoProfiler *prof, uintptr_t tid)
+@@ -4172,8 +4172,12 @@ thread_startup (MonoProfiler *prof, uintptr_t tid)
  	}
-
+ 
  	tls = (DebuggerTlsData *)mono_native_tls_get_value (debugger_tls_id);
 -	g_assert (!tls);
 -	// FIXME: Free this somewhere
