@@ -34,7 +34,6 @@ def main(raw_args):
         'wasm_m2n_trampolines_hook.diff',
         'btls-cmake-args-linux-mingw.diff',
         'btls-cmake-arm64.diff',
-        'mono-linux-disable-mmap-MAP_32BIT.diff',
     ]
 
     if os.path.isfile(os.path.join(mono_source_root, 'mono/tools/offsets-tool/offsets-tool.py')):
