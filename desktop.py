@@ -124,6 +124,16 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
             #'--enable-static-gcc-libs'
         ]
     elif target_platform == 'osx':
+        osx_sysroot_path = opts.osx_sdk_path
+
+        if not osx_sysroot_path and sys.platform == 'darwin':
+            # Auto-detect on macOS
+            osx_sysroot_path = xcrun_find_sdk('macosx')
+
+        osx_sysroot_flags = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=%s' % opts.osx_version_min]
+
+        CFLAGS = osx_sysroot_flags
+
         if is_cross_compiling(target_platform):
             osxcross_root = os.environ['OSXCROSS_ROOT']
             osx_toolchain_path = path_join(osxcross_root, 'target')
@@ -153,15 +163,10 @@ def setup_desktop_template(env: dict, opts: DesktopOpts, product: str, target_pl
             env['_%s-%s_CC' % (product, target)] = '%s/usr/bin/clang' % osx_toolchain
             env['_%s-%s_CXX' % (product, target)] = '%s/usr/bin/clang++' % osx_toolchain
 
-            osx_sysroot = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk'
+            CFLAGS += ['-arch', target_arch[target_platform][target]]
 
-            CFLAGS = [
-                '-isysroot', osx_sysroot,
-                '-arch', target_arch[target_platform][target]
-            ]
-
-            env['_%s-%s_CFLAGS' % (product, target)] = CFLAGS
-            env['_%s-%s_CXXFLAGS' % (product, target)] = CFLAGS
+        env['_%s-%s_CFLAGS' % (product, target)] = CFLAGS
+        env['_%s-%s_CXXFLAGS' % (product, target)] = CFLAGS
 
     env['_%s-%s_CONFIGURE_FLAGS' % (product, target)] = CONFIGURE_FLAGS
 
@@ -262,9 +267,13 @@ def run_main(raw_args, target_platform):
 
     default_help = 'default: %(default)s'
 
+    default_osx_version_min = '10.9'
+
     parser.add_argument('action', choices=['configure', 'make', 'copy-bcl', 'clean'])
     parser.add_argument('--target', choices=targets[target_platform], action='append', required=True)
     parser.add_argument('--with-llvm', action='store_true', default=False, help=default_help)
+    parser.add_argument('--osx-sdk', default='', help=default_help)
+    parser.add_argument('--osx-version-min', default=default_osx_version_min, help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
 
