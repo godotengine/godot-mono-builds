@@ -195,16 +195,16 @@ def make_product(opts: BclOpts, product: str):
 
         mkdir_p(monotouch_profile_dir)
 
-        android_env_csc_args = [
+        ios_env_csc_args = [
             path_join(this_script_dir, 'files', 'xi.cs'),
             '-keyfile:' + path_join(this_script_dir, 'files', 'xi.snk'),
             '-out:%s' % path_join(monotouch_profile_dir, 'Xamarin.iOS.dll'),
             '-optimize', '-deterministic', '-publicsign', '-target:library',
             '-nostdlib', '-noconfig', '-langversion:latest'
         ]
-        android_env_csc_args += ['-r:%s' % path_join(monotouch_profile_dir, r) for r in refs]
+        ios_env_csc_args += ['-r:%s' % path_join(monotouch_profile_dir, r) for r in refs]
 
-        run_command('csc', android_env_csc_args)
+        run_command('csc', ios_env_csc_args)
 
 
 def clean_product(opts: BclOpts, product: str):

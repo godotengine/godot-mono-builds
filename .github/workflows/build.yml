@@ -23,17 +23,19 @@ on:
 
 env:
   # Use SHA or tag instead of the branch for caching purposes.
-  MONO_TAG: mono-6.12.0.198
+  MONO_TAG: mono-6.12.0.206
   PYTHON_VERSION: '3.11'
   # Should match the version that Mono supports.
   EMSDK_VERSION: 1.39.9
   # platform/iphone/detect.py
-  IOS_VERSION_MIN: 10.0
+  IOS_VERSION_MIN: 12.0
+  # Supporting Xcode 15+ requires backporting a bunch of stuff.
+  XCODE_VERSION: 14.3.1
 
 jobs:
   linux:
     name: Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: [x86, x86_64]
@@ -49,37 +51,35 @@ jobs:
         if: matrix.target == 'x86_64'
         run: |
           cd /home/runner
-          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          curl -LO https://github.com/godotengine/buildroot/releases/download/godot-2023.08.x-4/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           cd x86_64-godot-linux-gnu_sdk-buildroot
           ./relocate-sdk.sh
           cd bin
-          rm -f {aclocal*,auto*,libtool*,m4}
           for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
           echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Install Linux SDK (x86)
         if: matrix.target == 'x86'
         run: |
           cd /home/runner
-          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/i686-godot-linux-gnu_sdk-buildroot.tar.bz2
+          curl -LO https://github.com/godotengine/buildroot/releases/download/godot-2023.08.x-4/i686-godot-linux-gnu_sdk-buildroot.tar.bz2
           tar xf i686-godot-linux-gnu_sdk-buildroot.tar.bz2
           rm -f i686-godot-linux-gnu_sdk-buildroot.tar.bz2
           cd i686-godot-linux-gnu_sdk-buildroot
           ./relocate-sdk.sh
           cd bin
-          rm -f {aclocal*,auto*,libtool*,m4}
           for file in i686-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
           echo "PATH=/home/runner/i686-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -88,11 +88,11 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -109,7 +109,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/linux-${{ matrix.target }}.zip desktop-linux-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.target }}
           path: ~/mono-installs-artifacts/linux-${{ matrix.target }}.zip
@@ -117,14 +117,14 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-linux-${{ matrix.target }}-release/config.log
 
   windows:
     name: Windows
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: [x86, x86_64]
@@ -147,13 +147,13 @@ jobs:
           sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -162,11 +162,11 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -183,7 +183,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/windows-${{ matrix.target }}.zip desktop-windows-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.target }}
           path: ~/mono-installs-artifacts/windows-${{ matrix.target }}.zip
@@ -191,14 +191,14 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-windows-${{ matrix.target }}-release/config.log
 
   osx:
     name: macOS
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
         target: [arm64, x86_64]
@@ -206,18 +206,22 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
+      - name: Setup compatible Xcode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - name: Install Dependencies
         run: |
-          brew install autoconf automake libtool pkg-config cmake python3
+          brew install automake
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -226,15 +230,15 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
-        run:
+        run: |
           python3 godot-mono-builds/patch_mono.py
       - name: Configure
         run:
@@ -247,7 +251,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/osx-${{ matrix.target }}.zip desktop-osx-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: osx-${{ matrix.target }}
           path: ~/mono-installs-artifacts/osx-${{ matrix.target }}.zip
@@ -255,14 +259,14 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: osx-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-osx-${{ matrix.target }}-release/config.log
 
   ios:
     name: iOS
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
         target: [arm64, x86_64, arm64-sim]
@@ -270,18 +274,22 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
+      - name: Setup compatible Xcode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - name: Install Dependencies
         run: |
-          brew install autoconf automake libtool pkg-config cmake python3
+          brew install automake
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -290,15 +298,15 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
-        run:
+        run: |
           python3 godot-mono-builds/patch_mono.py
       - name: Configure
         run: |
@@ -312,7 +320,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-${{ matrix.target }}
           path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
@@ -320,7 +328,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-${{ matrix.target }}-config.log
           path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
@@ -328,7 +336,7 @@ jobs:
   ios-cross:
     needs: llvm
     name: iOS Cross-compiler
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
         target: [cross-arm64]
@@ -340,18 +348,22 @@ jobs:
       - name: Set Environment Variables
         run: |
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
+      - name: Setup compatible Xcode version
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - name: Install Dependencies
         run: |
-          brew install autoconf automake libtool pkg-config cmake python3
+          brew install automake
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -360,20 +372,20 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
-        run:
+        run: |
           python3 godot-mono-builds/patch_mono.py
       - name: Download LLVM artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: llvm-${{ matrix.llvm }}-macos-latest
+          name: llvm-${{ matrix.llvm }}-macos-13
           # Tilde ~/ not supported when downloading yet: https://github.com/actions/download-artifact/issues/37
           # File permissions are also messed up: https://github.com/actions/upload-artifact/issues/38
           # We have to manually move the folder and restore the file permissions in the next step.
@@ -399,7 +411,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-${{ matrix.target }}
           path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
@@ -407,27 +419,26 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload Runtime config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-${{ matrix.target }}-runtime-config.log
           path: ~/mono-configs/ios-${{ matrix.runtime_target }}-release/config.log
       - name: Upload Cross config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ios-${{ matrix.target }}-config.log
           path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
 
   android:
     name: Android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: [armv7, arm64v8, x86, x86_64]
     steps:
       - name: Set Environment Variables
         run: |
-          env
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
       - name: Install Dependencies
         run: |
@@ -435,13 +446,13 @@ jobs:
           sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -450,11 +461,11 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -471,7 +482,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/android-${{ matrix.target }}.zip android-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-${{ matrix.target }}
           path: ~/mono-installs-artifacts/android-${{ matrix.target }}.zip
@@ -479,14 +490,14 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: android-${{ matrix.target }}-config.log
           path: ~/mono-configs/android-${{ matrix.target }}-release/config.log
 
   wasm:
     name: WebAssembly
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         target: [runtime, runtime-threads]
@@ -500,13 +511,13 @@ jobs:
           sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -515,15 +526,15 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Setup Emscripten SDK
-        uses: mymindstorm/setup-emsdk@v12
+        uses: mymindstorm/setup-emsdk@v14
         with:
           version: ${{ env.EMSDK_VERSION }}
       - name: Patch Mono
@@ -540,7 +551,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/wasm-${{ matrix.target }}.zip wasm-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wasm-${{ matrix.target }}
           path: ~/mono-installs-artifacts/wasm-${{ matrix.target }}.zip
@@ -548,7 +559,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: wasm-${{ matrix.target }}-config.log
           path: ~/mono-configs/wasm-${{ matrix.target }}-release/config.log
@@ -558,22 +569,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-22.04, macos-13]
         target: [llvm64, llvmwin64]
         exclude:
-          # We already build for Windows on ubuntu-latest
-          - os: macos-latest
+          # We already build for Windows on ubuntu-22.04
+          - os: macos-13
             target: llvmwin64
     steps:
       - name: Cache LLVM
         id: cache_llvm
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/mono-installs/llvm-${{ matrix.target }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-llvm-${{ matrix.target }}
       - name: Set Environment Variables
         run: |
           echo "MONO_SOURCE_ROOT=$GITHUB_WORKSPACE/mono_sources" >> $GITHUB_ENV
+      - name: Setup compatible Xcode version
+        if: steps.cache_llvm.outputs.cache-hit != 'true' && matrix.os == 'macos-13'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_VERSION }}
       - name: Install Dependencies (Linux)
         if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux'
         run: |
@@ -583,13 +599,12 @@ jobs:
         if: steps.cache_llvm.outputs.cache-hit != 'true' && runner.os == 'Linux'
         run: |
           cd /home/runner
-          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          curl -LO https://github.com/godotengine/buildroot/releases/download/godot-2023.08.x-4/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           cd x86_64-godot-linux-gnu_sdk-buildroot
           ./relocate-sdk.sh
           cd bin
-          rm -f {aclocal*,auto*,libtool*,m4}
           for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
           echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Install Dependencies (Linux Targeting Windows)
@@ -597,19 +612,19 @@ jobs:
         run: |
           sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
       - name: Install Dependencies (macOS)
-        if: steps.cache_llvm.outputs.cache-hit != 'true' && matrix.os == 'macos-latest'
+        if: steps.cache_llvm.outputs.cache-hit != 'true' && matrix.os == 'macos-13'
         run: |
-          brew install autoconf automake libtool pkg-config cmake python3
+          brew install automake
       - name: Cache Mono Sources
         if: steps.cache_llvm.outputs.cache-hit != 'true'
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true' && steps.cache_llvm.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -620,24 +635,24 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
         if: steps.cache_llvm.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
         if: steps.cache_llvm.outputs.cache-hit != 'true'
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
         if: steps.cache_llvm.outputs.cache-hit != 'true'
-        run:
+        run: |
           python3 godot-mono-builds/patch_mono.py
       - name: Make
         if: steps.cache_llvm.outputs.cache-hit != 'true'
         run:
           python3 godot-mono-builds/llvm.py make --target=${{ matrix.target }} -j 2
       - name: Upload LLVM Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: llvm-${{ matrix.target }}-${{ matrix.os }}
           path: ~/mono-installs/llvm-${{ matrix.target }}
@@ -646,14 +661,14 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: llvm-${{ matrix.target }}-${{ matrix.os }}-config.log
           path: ~/mono-configs/llvm-${{ matrix.target }}/config.log
 
   bcl:
     name: BCL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         product: [desktop, desktop-win32, android, ios, wasm]
@@ -668,24 +683,23 @@ jobs:
       - name: Install Linux SDK (x86_64)
         run: |
           cd /home/runner
-          curl -LO https://downloads.tuxfamily.org/godotengine/toolchains/linux/2021-02-11/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
+          curl -LO https://github.com/godotengine/buildroot/releases/download/godot-2023.08.x-4/x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           tar xf x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           rm -f x86_64-godot-linux-gnu_sdk-buildroot.tar.bz2
           cd x86_64-godot-linux-gnu_sdk-buildroot
           ./relocate-sdk.sh
           cd bin
-          rm -f {aclocal*,auto*,libtool*,m4}
           for file in x86_64-godot-*; do alias=$(echo $file | sed "s/godot-//"); ln -s $file $alias; done
           echo "PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/bin:${PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
       - name: Checkout Mono Sources
         if: steps.cache_mono_sources.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: mono/mono
           ref: ${{ env.MONO_TAG }}
@@ -694,11 +708,11 @@ jobs:
       - name: Clean Mono
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: godot-mono-builds
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Patch Mono
@@ -716,7 +730,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/bcl-${{ matrix.product }}.zip ${{ matrix.product }}-bcl)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bcl-${{ matrix.product }}
           path: ~/mono-installs-artifacts/bcl-${{ matrix.product }}.zip
@@ -724,7 +738,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bcl-${{ matrix.product }}-config.log
           path: ~/mono-configs/bcl/config.log
@@ -733,7 +747,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: [linux, windows, osx, ios, ios-cross, android, wasm, bcl]
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     outputs:
       release_upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
@@ -760,7 +774,7 @@ jobs:
     if: success() && github.event_name == 'create' && startsWith(github.ref, 'refs/heads/release/')
     needs: create-release
     name: Upload Release Artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         artifact_name: [linux-x86, linux-x86_64, windows-x86, windows-x86_64, osx-arm64, osx-x86_64,
@@ -770,7 +784,7 @@ jobs:
                         bcl-desktop, bcl-desktop-win32, bcl-android, bcl-ios, bcl-wasm]
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ./

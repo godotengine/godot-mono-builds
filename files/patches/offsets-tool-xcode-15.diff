@@ -1,0 +1,23 @@
+From 68f8f5992eb55728df5edc10a82547eb51d6c5a9 Mon Sep 17 00:00:00 2001
+From: Steve Pfister <steveisok@users.noreply.github.com>
+Date: Wed, 5 Jul 2023 09:10:17 -0700
+Subject: [PATCH] [iOS] Add temp cindex attribute to build on xcode 15 (#88261)
+
+Without CursorKind 437, the cross build for iOS/tvOS and iOS/tvOSSimulator will fail. This change adds a temporary attribute to avoid that.
+---
+ mono/tools/offsets-tool/clang/cindex.py | 2 ++
+ 1 file changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/mono/tools/offsets-tool/clang/cindex.py b/mono/tools/offsets-tool/clang/cindex.py
+index 0ed1c199ba44dd..eeb94a72401fdd 100644
+--- a/mono/tools/offsets-tool/clang/cindex.py
++++ b/mono/tools/offsets-tool/clang/cindex.py
+@@ -1352,6 +1352,8 @@ def __repr__(self):
+ 
+ CursorKind.DLLEXPORT_ATTR = CursorKind(418)
+ CursorKind.DLLIMPORT_ATTR = CursorKind(419)
++# Temporary fake value to work around xcode 15 beta / clang 15
++CursorKind.XCODEBETA_ATTR = CursorKind(437)
+ CursorKind.CONVERGENT_ATTR = CursorKind(438)
+ CursorKind.WARN_UNUSED_ATTR = CursorKind(439)
+ CursorKind.WARN_UNUSED_RESULT_ATTR = CursorKind(440)

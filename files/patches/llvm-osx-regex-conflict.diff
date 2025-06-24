@@ -1,0 +1,21 @@
+diff --git a/external/llvm-project/llvm/lib/Support/regex_impl.h b/external/llvm-project/llvm/lib/Support/regex_impl.h
+index f8296c9ff75e..45bdb469a0b3 100644
+--- a/external/llvm-project/llvm/lib/Support/regex_impl.h
++++ b/external/llvm-project/llvm/lib/Support/regex_impl.h
+@@ -35,8 +35,8 @@
+  *	@(#)regex.h	8.1 (Berkeley) 6/2/93
+  */
+ 
+-#ifndef _REGEX_H_
+-#define	_REGEX_H_
++#ifndef _REGEX_IMPL_H_
++#define	_REGEX_IMPL_H_
+ 
+ #include <sys/types.h>
+ typedef off_t llvm_regoff_t;
+@@ -105,4 +105,4 @@ size_t  llvm_strlcpy(char *dst, const char *src, size_t siz);
+ }
+ #endif
+ 
+-#endif /* !_REGEX_H_ */
++#endif /* !_REGEX_IMPL_H_ */
