@@ -62,18 +62,20 @@ def get_api_version_or_min(opts: AndroidOpts, target: str) -> str:
 def setup_android_target_template(env: dict, opts: AndroidOpts, target: str):
     extra_target_envs = {
         'armv7': {
-            'android-armeabi-v7a_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
-            'android-armeabi-v7a_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
-            'android-armeabi-v7a_LDFLAGS': ['-Wl,--fix-cortex-a8']
+            'android-armv7_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
+            'android-armv7_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-march=armv7-a', '-mtune=cortex-a8', '-mfpu=vfp', '-mfloat-abi=softfp'],
+            'android-armv7_LDFLAGS': ['-Wl,--fix-cortex-a8']
         },
         'arm64v8': {
-            'android-arm64-v8a_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64'],
-            'android-arm64-v8a_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64']
+            'android-arm64v8_CFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64'],
+            'android-arm64v8_CXXFLAGS': ['-D__POSIX_VISIBLE=201002', '-DSK_RELEASE', '-DNDEBUG', '-UDEBUG', '-fpic', '-DL_cuserid=9', '-DANDROID64'],
+            'android-arm64v8_LDFLAGS': ['-Wl,-z,max-page-size=16384', '-Wl,-z,common-page-size=16384']
         },
         'x86': {},
         'x86_64': {
             'android-x86_64_CFLAGS': ['-DL_cuserid=9'],
-            'android-x86_64_CXXFLAGS': ['-DL_cuserid=9']
+            'android-x86_64_CXXFLAGS': ['-DL_cuserid=9'],
+            'android-x86_64_LDFLAGS': ['-Wl,-z,max-page-size=16384', '-Wl,-z,common-page-size=16384']
         }
     }
     env.update(extra_target_envs[target])
