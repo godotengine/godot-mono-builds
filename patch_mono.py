@@ -34,10 +34,11 @@ def main(raw_args):
         'wasm_m2n_trampolines_hook.diff',
         'btls-cmake-args-linux-mingw.diff',
         'btls-cmake-arm64.diff',
-        'llvm-osx-regex-conflict.diff',
+        'btls-cmake-android-16kb-page-size.diff',
         'offsets-tool-extra-cflags.diff',
         'offsets-tool-newer-clang.diff',
         'offsets-tool-duplicate-fields.diff',
+        'llvm-osx-regex-conflict.diff',
     ]
 
     from subprocess import Popen
