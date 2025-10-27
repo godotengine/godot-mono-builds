@@ -111,7 +111,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/linux-${{ matrix.target }}.zip desktop-linux-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: linux-${{ matrix.target }}
           path: ~/mono-installs-artifacts/linux-${{ matrix.target }}.zip
@@ -119,7 +119,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: linux-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-linux-${{ matrix.target }}-release/config.log
@@ -185,7 +185,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/windows-${{ matrix.target }}.zip desktop-windows-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-${{ matrix.target }}
           path: ~/mono-installs-artifacts/windows-${{ matrix.target }}.zip
@@ -193,7 +193,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-windows-${{ matrix.target }}-release/config.log
@@ -257,7 +257,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/osx-${{ matrix.target }}.zip desktop-osx-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: osx-${{ matrix.target }}
           path: ~/mono-installs-artifacts/osx-${{ matrix.target }}.zip
@@ -265,7 +265,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: osx-${{ matrix.target }}-config.log
           path: ~/mono-configs/desktop-osx-${{ matrix.target }}-release/config.log
@@ -330,7 +330,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-${{ matrix.target }}
           path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
@@ -338,7 +338,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-${{ matrix.target }}-config.log
           path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
@@ -426,7 +426,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/ios-${{ matrix.target }}.zip ios-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-${{ matrix.target }}
           path: ~/mono-installs-artifacts/ios-${{ matrix.target }}.zip
@@ -434,13 +434,13 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload Runtime config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-${{ matrix.target }}-runtime-config.log
           path: ~/mono-configs/ios-${{ matrix.runtime_target }}-release/config.log
       - name: Upload Cross config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ios-${{ matrix.target }}-config.log
           path: ~/mono-configs/ios-${{ matrix.target }}-release/config.log
@@ -497,7 +497,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/android-${{ matrix.target }}.zip android-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-${{ matrix.target }}
           path: ~/mono-installs-artifacts/android-${{ matrix.target }}.zip
@@ -505,7 +505,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-${{ matrix.target }}-config.log
           path: ~/mono-configs/android-${{ matrix.target }}-release/config.log
@@ -566,7 +566,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/wasm-${{ matrix.target }}.zip wasm-${{ matrix.target }}-release)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: wasm-${{ matrix.target }}
           path: ~/mono-installs-artifacts/wasm-${{ matrix.target }}.zip
@@ -574,7 +574,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: wasm-${{ matrix.target }}-config.log
           path: ~/mono-configs/wasm-${{ matrix.target }}-release/config.log
@@ -673,7 +673,7 @@ jobs:
         run:
           python3 godot-mono-builds/llvm.py make --target=${{ matrix.target }} -j 2
       - name: Upload LLVM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: llvm-${{ matrix.target }}-${{ matrix.os }}
           path: ~/mono-installs/llvm-${{ matrix.target }}
@@ -682,7 +682,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: llvm-${{ matrix.target }}-${{ matrix.os }}-config.log
           path: ~/mono-configs/llvm-${{ matrix.target }}/config.log
@@ -752,7 +752,7 @@ jobs:
           mkdir -p $HOME/mono-installs-artifacts
           (cd $HOME/mono-installs && zip -ry $HOME/mono-installs-artifacts/bcl-${{ matrix.product }}.zip ${{ matrix.product }}-bcl)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bcl-${{ matrix.product }}
           path: ~/mono-installs-artifacts/bcl-${{ matrix.product }}.zip
@@ -760,7 +760,7 @@ jobs:
         run: pushd ${{ env.MONO_SOURCE_ROOT }} && git reset --hard && git clean -xffd && git submodule foreach --recursive git reset --hard && git submodule foreach --recursive git clean -xffd && git submodule update --init --recursive && popd
       - name: Upload config.log After Error
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: bcl-${{ matrix.product }}-config.log
           path: ~/mono-configs/bcl/config.log
