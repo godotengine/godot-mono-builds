@@ -75,7 +75,7 @@ jobs:
           echo "LD_LIBRARY_PATH=/home/runner/i686-godot-linux-gnu_sdk-buildroot/i686-godot-linux-gnu/lib:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -149,7 +149,7 @@ jobs:
           sudo apt-get -y install mingw-w64 libz-mingw-w64-dev
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -221,7 +221,7 @@ jobs:
           cmake-version: '3.31.7'
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -293,7 +293,7 @@ jobs:
           cmake-version: '3.31.7'
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -372,7 +372,7 @@ jobs:
           cmake-version: '3.31.7'
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -461,7 +461,7 @@ jobs:
           sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -526,7 +526,7 @@ jobs:
           sudo apt-get -y install git autoconf libtool libtool-bin automake build-essential gettext cmake python3 curl
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -593,7 +593,7 @@ jobs:
     steps:
       - name: Cache LLVM
         id: cache_llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/mono-installs/llvm-${{ matrix.target }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-llvm-${{ matrix.target }}
@@ -639,7 +639,7 @@ jobs:
       - name: Cache Mono Sources
         if: steps.cache_llvm.outputs.cache-hit != 'true'
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
@@ -715,7 +715,7 @@ jobs:
           echo "LD_LIBRARY_PATH=/home/runner/x86_64-godot-linux-gnu_sdk-buildroot/x86_64-godot-linux-gnu/lib64:${LD_LIBRARY_PATH}" >> $GITHUB_ENV
       - name: Cache Mono Sources
         id: cache_mono_sources
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.MONO_SOURCE_ROOT }}
           key: ${{ runner.os }}-${{ env.MONO_TAG }}-mono-sources
