@@ -390,8 +390,10 @@ def setup_ios_cross_template(env: dict, opts: iOSOpts, target: str, host_arch: s
 
     AC_VARS = ['ac_cv_func_shm_open_working_with_mmap=no']
 
-    CFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments']
-    CXXFLAGS = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=10.9', '-Qunused-arguments', '-stdlib=libc++']
+    osx_sysroot_flags = ['-isysroot', osx_sysroot_path, '-mmacosx-version-min=%s' % opts.osx_version_min]
+
+    CFLAGS = osx_sysroot_flags + ['-Qunused-arguments']
+    CXXFLAGS = osx_sysroot_flags + ['-Qunused-arguments', '-stdlib=libc++']
     CPPFLAGS = ['-DMONOTOUCH=1']
     LDFLAGS = ['-stdlib=libc++']
 
@@ -500,7 +502,8 @@ def main(raw_args):
 
     default_ios_toolchain = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain'
     default_osx_toolchain = '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain'
-    default_ios_version_min = '10.0' # Same as Godot
+    default_ios_version_min = '10.0'
+    default_osx_version_min = '10.9'
 
     parser.add_argument('action', choices=['configure', 'make', 'clean'])
     parser.add_argument('--target', choices=target_values, action='append', required=True)
@@ -509,6 +512,7 @@ def main(raw_args):
     parser.add_argument('--ios-version-min', default=default_ios_version_min, help=default_help)
     parser.add_argument('--osx-toolchain', default=default_osx_toolchain, help=default_help)
     parser.add_argument('--osx-sdk', default='', help=default_help)
+    parser.add_argument('--osx-version-min', default=default_osx_version_min, help=default_help)
     parser.add_argument('--osx-triple-abi', default='darwin18', help=default_help)
 
     cmd_utils.add_runtime_arguments(parser, default_help)
